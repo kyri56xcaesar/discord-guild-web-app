@@ -35,7 +35,7 @@ function toggleNav() {
 
 
 const botsDisplay = document.getElementById("bots-display");
-const servicesDisplay = document.getElementById("services-display");
+const servicesDisplay = document.getElementById("hof-display");
 const clientsDisplay = document.getElementById("clients-display");
 
 // Main Body display options
@@ -48,7 +48,7 @@ function showClients() {
     clientsDisplay.style.display = "block"
 }
 
-function showServices() {
+function showHof() {
 
     // console.log('Displaying Services content...')
     
@@ -124,3 +124,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 });
+
+
+

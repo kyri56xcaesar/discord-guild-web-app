@@ -37,8 +37,8 @@
         </div>
 
         <div class="top-sidebar">
+            <a href="#" onclick="showHof()">Hall of Fame</a>
             <a href="#" onclick="showMain()">Ρομποτάκια</a>
-            <a href="#" onclick="showServices()">Hall of Fame</a>
         </div>
         <div class="bottom-sidebar">
             <a href="#" onclick="showClients()">A S C E N D</a>
@@ -78,32 +78,41 @@
 
         </div>
 
-        <div class="content-display scrollable-container" id="services-display">
-            <p>This is some sample content.</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
-            <p>Add more content here...</p>
+        <div class="content-display" id="hof-display">
+            
+            <canvas id="matrixCanvas"></canvas>
+            <script  src="matrix_effect.js"></script>
+            <div class="hof-content">
+                <p>This is some sample content.</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+                <p>Add more content here...</p>
+            </div>
+            <div id="turn-off-btn">
+                <div class="matrix-btn-part2" onclick="toggleMatrixEffect()"></div>
+            </div>
+
         </div>
 
         <div class="content-display scrollable-container" id="clients-display">
@@ -119,6 +128,61 @@
             <p>Add more content here...</p>
             <p>Add more content here...</p>
         </div>
+
+
+        
+        <footer id="footer" class="footer">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-5">
+                        <h5><i class="fa fa-road"></i> $DADS .co<span>&#174;</span>
+                        </h5>
+                        <div class="row">
+                            <div class="col-6">
+                                <ul class="list-unstyled">
+                                    <li><a href="">Product</a></li>
+                                    <li><a href="">Benefits</a></li>
+                                    <li><a href="">Partners</a></li>
+                                    <li><a href="">Team</a></li>
+                                </ul>
+                            </div>
+                            <div class="col-6">
+                                <ul class="list-unstyled">
+                                    <li><a href="">Documentation</a></li>
+                                    <li><a href="">Support</a></li>
+                                    <li><a href="">Legal Terms</a></li>
+                                    <li><a href="">About</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <ul class="nav">
+                            <li class="nav-item"><a href="https://discord.gg/XRcKPPQnhp" class="nav-link" target="_blank"><i class="fab fa-discord fa-lg"></i></a></li> <!-- Updated Discord icon -->
+                            <li class="nav-item"><a href="https://github.com/kyri56xcaesar" class="nav-link" target="_blank"><i class="fab fa-github fa-lg"></i></a></li>
+                            <li class="nav-item"><a href="" class="nav-link"><i class="fab fa-twitter fa-lg" target="_blank"></i></a></li>
+                            <li class="nav-item"><a href="" class="nav-link"><i class="fab fa-instagram fa-lg" target="_blank"></i></a></li>
+                        </ul>
+                        <br>
+                    </div>
+                    <div class="col-md-2">
+                        <h5 class="text-md-right">Contact Us</h5>
+                        <hr>
+                    </div>
+                    <div class="col-md-5">
+                        <form>
+                            <fieldset class="form-group">
+                                <input type="email" class="form-control" id="exampleInputEmail1" placeholder="Enter email">
+                            </fieldset>
+                            <fieldset class="form-group">
+                                <textarea class="form-control" id="exampleMessage" placeholder="Message"></textarea>
+                            </fieldset>
+                            <fieldset class="form-group text-xs-right">
+                                <button type="button" class="btn btn-secondary-outline btn-lg">Send</button>
+                            </fieldset>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </footer>
 
         
     </main>
@@ -137,58 +201,6 @@
 </body>
 
 
-<footer id="footer" class="footer sidebar-affected">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-5">
-                <h5><i class="fa fa-road"></i> $DADS .co<span>&#174;</span>
-                </h5>
-                <div class="row">
-                    <div class="col-6">
-                        <ul class="list-unstyled">
-                            <li><a href="">Product</a></li>
-                            <li><a href="">Benefits</a></li>
-                            <li><a href="">Partners</a></li>
-                            <li><a href="">Team</a></li>
-                        </ul>
-                    </div>
-                    <div class="col-6">
-                        <ul class="list-unstyled">
-                            <li><a href="">Documentation</a></li>
-                            <li><a href="">Support</a></li>
-                            <li><a href="">Legal Terms</a></li>
-                            <li><a href="">About</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <ul class="nav">
-                    <li class="nav-item"><a href="https://discord.gg/XRcKPPQnhp" class="nav-link" target="_blank"><i class="fab fa-discord fa-lg"></i></a></li> <!-- Updated Discord icon -->
-                    <li class="nav-item"><a href="https://github.com/kyri56xcaesar" class="nav-link" target="_blank"><i class="fab fa-github fa-lg"></i></a></li>
-                    <li class="nav-item"><a href="" class="nav-link"><i class="fab fa-twitter fa-lg" target="_blank"></i></a></li>
-                    <li class="nav-item"><a href="" class="nav-link"><i class="fab fa-instagram fa-lg" target="_blank"></i></a></li>
-                </ul>
-                <br>
-            </div>
-            <div class="col-md-2">
-                <h5 class="text-md-right">Contact Us</h5>
-                <hr>
-            </div>
-            <div class="col-md-5">
-                <form>
-                    <fieldset class="form-group">
-                        <input type="email" class="form-control" id="exampleInputEmail1" placeholder="Enter email">
-                    </fieldset>
-                    <fieldset class="form-group">
-                        <textarea class="form-control" id="exampleMessage" placeholder="Message"></textarea>
-                    </fieldset>
-                    <fieldset class="form-group text-xs-right">
-                        <button type="button" class="btn btn-secondary-outline btn-lg">Send</button>
-                    </fieldset>
-                </form>
-            </div>
-        </div>
-    </div>
-</footer>
 
 
 </html>
