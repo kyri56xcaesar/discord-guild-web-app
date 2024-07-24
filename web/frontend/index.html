@@ -5,43 +5,190 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="styles.css">
     <title>Document</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+
 
     
 </head>
-<body>
 
+<header>
     <div id="header">
 
         <div id="navbtn">
-            <button class="openbtn" onclick="openNav()">Options</button>
+            <button id="togglebtn" class="openbtn" onclick="toggleNav()">More</button>
         </div>
-
+    
         <div id="title">
             <h1> $DADS </h1>
         </div>
     </div>
+</header>
 
-
+<body class="sidebar-affected">
 
 
     <hr>
 
     <div id="main-siderbar" class="sidebar"> 
-        <a href="javascript:void(0)" class=closebtn" onclick="closeNav()">x</a>
-        <a href="#">About</a>
-        <a href="#">Services</a>
-        <a href="#">Clients</a>
-        <a href="#">Contact</a>
+        <div id="logo-sidebar" class="mini-logo">
+            <h2>$$$</h2>
+            <hr>
+        </div>
+
+        <div class="top-sidebar">
+            <a href="#" onclick="showMain()">Ρομποτάκια</a>
+            <a href="#" onclick="showServices()">Hall of Fame</a>
+        </div>
+        <div class="bottom-sidebar">
+            <a href="#" onclick="showClients()">A S C E N D</a>
+            <a id="contact-ref" href="#footer">Info</a>
+        </div>
+    </div>
+
+    <main class="scrollable-container" id="main-content">
+            
+        <div class="content-display" id="bots-display">
+
+            <div id="bots-main-container">
+                <div id="bot-selector">
+
+                </div>
+                <div id="dads-wheel-container">
+                    <div id="dads-wheel">
+                        <div id="dads-img">
+                            <img src="../assets/mozart_draw.jpg" class="rotatable-image" draggable="false">
+                        </div>
+                        <span style="--i:0;"></span>
+                        <span style="--i:1;"></span>
+                        <span style="--i:2;"></span>
+                        <span style="--i:3;"></span>
+                        <span style="--i:4;"></span>
+                        <span style="--i:5;"></span>
+                    </div>
+                </div>
+                <div id="bot-content">
+
+                </div>
+            </div>
+
+            <div id="bot-details-container">
+
+            </div>
+
+        </div>
+
+        <div class="content-display scrollable-container" id="services-display">
+            <p>This is some sample content.</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+        </div>
+
+        <div class="content-display scrollable-container" id="clients-display">
+            <p>This is some sample content.</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+            <p>Add more content here...</p>
+        </div>
+
         
+    </main>
+    
+    <div class="sticky-body" id="author-body-footer">
+        <div class="sticky-body-element" id="author-information">
+        
+            <p> Author: kyri56xcaesar </p>
+        </div>
     </div>
-
-    <div>
-
-    </div>
-
 
 
     <script src="index.js"></script>
 
+    
 </body>
+
+
+<footer id="footer" class="footer sidebar-affected">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-5">
+                <h5><i class="fa fa-road"></i> $DADS .co<span>&#174;</span>
+                </h5>
+                <div class="row">
+                    <div class="col-6">
+                        <ul class="list-unstyled">
+                            <li><a href="">Product</a></li>
+                            <li><a href="">Benefits</a></li>
+                            <li><a href="">Partners</a></li>
+                            <li><a href="">Team</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-6">
+                        <ul class="list-unstyled">
+                            <li><a href="">Documentation</a></li>
+                            <li><a href="">Support</a></li>
+                            <li><a href="">Legal Terms</a></li>
+                            <li><a href="">About</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <ul class="nav">
+                    <li class="nav-item"><a href="https://discord.gg/XRcKPPQnhp" class="nav-link" target="_blank"><i class="fab fa-discord fa-lg"></i></a></li> <!-- Updated Discord icon -->
+                    <li class="nav-item"><a href="https://github.com/kyri56xcaesar" class="nav-link" target="_blank"><i class="fab fa-github fa-lg"></i></a></li>
+                    <li class="nav-item"><a href="" class="nav-link"><i class="fab fa-twitter fa-lg" target="_blank"></i></a></li>
+                    <li class="nav-item"><a href="" class="nav-link"><i class="fab fa-instagram fa-lg" target="_blank"></i></a></li>
+                </ul>
+                <br>
+            </div>
+            <div class="col-md-2">
+                <h5 class="text-md-right">Contact Us</h5>
+                <hr>
+            </div>
+            <div class="col-md-5">
+                <form>
+                    <fieldset class="form-group">
+                        <input type="email" class="form-control" id="exampleInputEmail1" placeholder="Enter email">
+                    </fieldset>
+                    <fieldset class="form-group">
+                        <textarea class="form-control" id="exampleMessage" placeholder="Message"></textarea>
+                    </fieldset>
+                    <fieldset class="form-group text-xs-right">
+                        <button type="button" class="btn btn-secondary-outline btn-lg">Send</button>
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
 </html>
