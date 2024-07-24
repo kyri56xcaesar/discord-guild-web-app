@@ -66,13 +66,6 @@ function showMain() {
     clientsDisplay.style.display = "none"
 }
 
-// Footer redirection
-document.getElementById('contact-ref').addEventListener('click', function(event) {
-    event.preventDefault();
-    closeNav()
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-});
-
 
 
 
