@@ -1,27 +1,51 @@
 import discord 
 import random
 import os
+import asyncio
+from discord.ext import commands
+
+from elevenlabs import save
+from elevenlabs.client import AsyncElevenLabs
 from dotenv import load_dotenv
 
 
 load_dotenv()
 
 token = os.getenv("discord_token")
+elevenlabs_token = os.getenv("evenlabs_token")
+
+eleven_client = AsyncElevenLabs(
+    api_key=elevenlabs_token
+)
 
 intents = discord.Intents.all()
+intents.message_content = True
 client = discord.Client(intents=intents)
+bot = commands.Bot(command_prefix='>', intents=intents)
 
 
 aggro_words = ["eimai gia tin poutsa...", "wRaIo dAmAgE", "ADERFIA MOYY!!!", "nai alla tiwra.gr"]
 sad_words = ["Den exei nohma i yparksi xwris ton mpakaliaro...", "xwris ton mpakaliaro periplaniemai askopa se ena axanes sumpan...",\
 "afougrazomai tis stigmes poy zisame me ton mpakaliaro kai den tis xortainw.."]
 
-trigger_word = "mpakaliaros"
 
-katathlipsi = False
+katathlipsi = True
 counter = 0
 MSG_LOOP = 4
-song = "audio_files/Mad World - Gary Jules.mp3"
+song = "../audio_files/Mad World - Gary Jules.mp3"
+# audio = "praise_cody.mp3"
+
+cody_text = ">say Cody Fury, the Prime, where valor meets divine. In Cody Fury's reign, strength and wisdom entwine. Prime Cody Fury, our guiding star in the endless sky. With Cody Fury, the Prime, all dreams soar high."
+
+
+async def play_audio_in_channel(channel, audio):
+    vc = await channel.connect()
+    vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audio))
+
+    while vc.is_playing():
+        await asyncio.sleep(.1)
+    await vc.disconnect()
+
 
 @client.event
 async def on_ready():
@@ -53,7 +77,27 @@ async def on_message(message):
     if msg.startswith("sakmode=dog"):
         katathlipsi=False
         await message.channel.send("OK eixame")
+        
+    if msg.startswith("##praise##"):
+        voice_channel = message.author.voice.channel
+        if voice_channel is not None:
+            audio = await eleven_client.generate(
+            text = cody_text,
+            voice="Callum",
+            model="eleven_multilingual_v2"
+        )
     
+        out = b''
+        async for value in audio:
+            out += value
+        
+    
+        save(out, "audio.mp3")
+    
+            
+        await play_audio_in_channel(voice_channel, audio="audio.mp3")
+            
+            
     if katathlipsi:
         if counter == MSG_LOOP:
             counter = 0
@@ -64,11 +108,7 @@ async def on_message(message):
         if msg.startswith("mpakaliaros"):
             voice_channel = message.author.voice.channel
             if voice_channel is not None:
-                voice_client = await voice_channel.connect()
-
-                audio_source = discord.FFmpegPCMAudio(song)
-
-                voice_client.play(audio_source)
+                await play_audio_in_channel(voice_channel, song)
                 
         return
 
