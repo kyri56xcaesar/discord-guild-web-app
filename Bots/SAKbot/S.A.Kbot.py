@@ -47,6 +47,31 @@ async def play_audio_in_channel(channel, audio):
     await vc.disconnect()
 
 
+@bot.command()
+async def say(ctx, *, text):
+    voice_channel = ctx.author.voice.channel
+    if voice_channel is None:
+        await ctx.send("mpes se vc re kagoura")
+        return
+    
+    
+    await ctx.message.delete()
+    
+    audio = await eleven_client.generate(
+        text=text,
+        voice="Callum",
+        model="eleven_multilingual_v2"
+    )
+    
+    out = b''
+    async for value in audio:
+        out += value
+        
+    save(out, "aud.mp3")
+    
+    await play_audio_in_channel(voice_channel, "aud.mp3")
+
+
 @client.event
 async def on_ready():
     print("Logged in as")
