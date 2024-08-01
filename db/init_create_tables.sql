@@ -12,9 +12,17 @@ CREATE TABLE IF NOT EXISTS trigger_words (
     data_datetime DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS lines (
+CREATE TABLE IF NOT EXISTS typical_lines (
     line_id integer primary key AUTOINCREMENT,
     bot_id integer ,
+    phrase varchar(255),
+    author char(20),
+    data_datetime DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sad_lines (
+    line_id integer primary key AUTOINCREMENT,
+    bot_id integer,
     phrase varchar(255),
     author char(20),
     data_datetime DATETIME DEFAULT CURRENT_TIMESTAMP

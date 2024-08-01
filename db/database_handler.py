@@ -1,6 +1,11 @@
 import sqlite3
 import re
+import sys
 
+
+sys.path.append("../Bots/")
+
+# Import the module from the parent directory
 import bot_utils as bu
 
 def is_valid_table_name(table_name):
@@ -40,9 +45,11 @@ def getBotByName():
 # select line by datetime
 
 
-def insert_trigger_words_in_table(con, table_name, data):
+def insert_trigger_words_in_table(db_name, table_name, data):
     if not is_valid_table_name(table_name):
         raise ValueError(f"Invalid table name: {table_name}")
+
+    con = sqlite3.connect(db_name)
 
     cur = con.cursor()
     
@@ -53,15 +60,19 @@ def insert_trigger_words_in_table(con, table_name, data):
         res = cur.fetchone()
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
+        con.close()
     
     con.commit()
 
+    con.close()
+    
     return res    
 
-def insert_trigger_words_in_table(con, table_name, data):
+def insert_trigger_words_in_table(db_name, table_name, data):
     if not is_valid_table_name(table_name):
         raise ValueError(f"Invalid table name: {table_name}")
 
+    con = sqlite3.connect(db_name)
     cur = con.cursor()
     
     
@@ -71,8 +82,11 @@ def insert_trigger_words_in_table(con, table_name, data):
         res = cur.fetchone()
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
+        con.close()
     
     con.commit()
+    
+    con.close()
 
     return res  
 

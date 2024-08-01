@@ -1,7 +1,9 @@
 import sqlite3
 import logging
+import os
 
 import database_handler as dh
+from dotenv import load_dotenv
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -9,11 +11,11 @@ logger = logging.getLogger(__name__)
 
 create_tables_sql = "init_create_tables.sql"
 init_populate_sql = "populate_current_tables.sql"
-
+load_dotenv()
 
 def main():
 
-    con = sqlite3.connect("myBots_databases.db")
+    con = sqlite3.connect(os.getenv('DATABASE_NAME') + ".db")
 
 
     init_database_system(con)
