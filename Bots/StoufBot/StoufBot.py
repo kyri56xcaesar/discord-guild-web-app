@@ -64,7 +64,7 @@ def print_pops():
     for i, pop in enumerate(pop_words):
         message += f"{i+1}. {pop}.\n"
 
-    print(message)
+    #print(message)
 
     return message
 
@@ -94,8 +94,8 @@ async def on_message(message):
     if message == None:
         return
 
-    print("Received message event")
-    print("Message content: " + message.content)
+    #print("Received message event")
+    #print("Message content: " + message.content)
 
     global trigger_words
     global pop_words

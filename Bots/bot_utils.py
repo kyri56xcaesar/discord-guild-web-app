@@ -16,3 +16,9 @@ def save_data(name, contents):
         for index, line in enumerate(contents):
             f.write(f"{index + 1}: {line}\n")
         f.write("-------------\n")
+
+
+
+def format_row_data_print(data):
+    for index, entry in enumerate(data):
+        print(f'[ENTRY]:-> {index + 1}. {entry}')
