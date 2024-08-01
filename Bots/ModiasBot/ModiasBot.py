@@ -31,7 +31,6 @@ client = discord.Client(intents=intents)
 # global vars
 load_dotenv()
 token = str(os.getenv("discord_token"))
-id = os.getenv("modias_id")
 tracker = list()
 
 MODIAS_SIGN = '&'
@@ -164,8 +163,8 @@ async def on_message(message):
     
     counter += 1
 
-    if message.author.id == id:
-        tracker.append(message)
+    if message.author.id == ta_doggia['modias']:
+        tracker.append(message.content)
 
     msg = message.content
 

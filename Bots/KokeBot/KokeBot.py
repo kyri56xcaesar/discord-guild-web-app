@@ -100,7 +100,7 @@ async def on_message(message):
         return
 
     if message.author.id == id:
-        tracker.append(message)
+        tracker.append(message.content)
 
     msg = message.content
 

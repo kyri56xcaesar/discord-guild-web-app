@@ -75,6 +75,9 @@ async def on_message(msg):
 
     # Get string content.
     message = msg.content
+    
+    if message.author.id == userID:
+        tracker.append(message)
 
     # Access global variable
     # To respond or not

@@ -105,7 +105,7 @@ async def on_message(message):
         return
 
     if message.author.id == id:
-        tracker.append(message)
+        tracker.append(message.content)
 
     msg = message.content
 
@@ -155,4 +155,4 @@ async def on_message(message):
         await message.channel.send(HELP())
 
 client.run(token)
-ut.save_data("Koke", tracker)
+ut.save_data("Stouf", tracker)
