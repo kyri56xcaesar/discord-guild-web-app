@@ -78,7 +78,7 @@ ta_doggia_tickets = {
 
 # phrases
 trigger_words = []
-modias_lines = ["Ενδιαφέρον θεωρία","Το μουνί της μάνας σου","Για","ΘΑ ΦΥΓΩ, ΤΟ 'ΧΩ ΞΑΝΑΚΑΝΕΙ","Θα περιμένω πολύυυ?","Δεν έχει καθόλου δροσιά","Δεξί αριστερό","CLEAVE THROUGH THEM AATROX","Και τα μαρούλια μέσα","Έλα μη με τιλτάρεις τώρα","Sydney Sweeney μόνο","Rap god Modias","Δες τι ήρωα έχει φτιάξει η Riot","Το Poppy τι είναι, τι είναι?","Εεε irrelevant","Ένα, δύο... ΤΕΣΣΕΡΑ","Ωωωωω στ'αρχιδια μας","Όντως?","Είναι μια αλήθεια αυτό","Χεχεεε βλάκααα","Βέεεεεεεεεβαια"]
+modias_lines = ["Ενδιαφέρον θεωρία","Το μουνί της μάνας σου","Για","ΘΑ ΦΥΓΩ, ΤΟ 'ΧΩ ΞΑΝΑΚΑΝΕΙ","Θα περιμένω πολύυυ?","Δεν έχει καθόλου δροσιά","Δεξί αριστερό","CLEAVE THROUGH THEM AATROX","Και τα μαρούλια μέσα","Έλα μη με τιλτάρεις τώρα","Sydney Sweeney μόνο","Rap god Modias","Δες τι ήρωα έχει φτιάξει η Riot","Το Poppy τι είναι, τι είναι?","Εεε irrelevant","Ένα, δύο... ΤΕΣΣΕΡΑ","Ωωωωω στ'αρχιδια μας","Όντως?","Είναι μια αλήθεια αυτό","Χεχεεε βλάκααα","Βέεεεεεεεεβαια", "Θα με κάνει gank ο J4"]
 modias_to_manos_lines = ["Εμμανουήλ, τι παίζεις φίλε?"]
 modias_to_koulis_lines = ["Λούγκα δεν έχει"]
 modias_to_modias_lines = ["Ποιός είναι αυτός ο όμορφος?"]
@@ -229,7 +229,7 @@ async def on_message(message):
                 ta_doggia_tickets['takas'] = False
                 
             elif str(message.author.id) == ta_doggia['modias'] and ta_doggia_tickets['modias']:
-                await message.channel.send(random.choice(modias_to_takas_lines))
+                await message.channel.send(random.choice(modias_to_modias_lines))
                 ta_doggia_tickets['modias'] = False
 
             else:

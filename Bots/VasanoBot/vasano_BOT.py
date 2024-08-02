@@ -22,7 +22,7 @@ print(f"token: {token}, userID: {userID}, general_channel: {general_ch_id}")
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 
-activated = False
+activated = True
 trigs = ["Kalhspera kai kali vradia edw me ton aderfo fofota", "gamo ton karioli ton OTE apo tis 7 to prwi mexri twra den eixa internet gamo tinpanagia tous prwi prwi",
          "gamw tis manes tous", "simera anastithike o bines", "me trexoyn oi traktores", "ksekinise to praktorio", "ff x9 matchfixers/griefers/hostagers", "epesa PLAT apo master 230 lp se mia nuxta", "pame vraxous gt me trexoyn ta mpastarda", "koke gamw tinmana sou vlaka",
          "me treksan tapromo mexri diamond 0 lp", "legit ama den paw master to kleinw kai 3 meres naparei ", "na se paw mia volta aptis kuries?", "o mikros apo tin pisw porta", "me trexei o lazer"]
@@ -76,7 +76,7 @@ async def on_message(msg):
     # Get string content.
     message = msg.content
     
-    if message.author.id == userID:
+    if msg.author.id == userID:
         tracker.append(message)
 
     # Access global variable
