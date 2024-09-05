@@ -17,6 +17,7 @@ func main() {
 	}
 
 	http.HandleFunc("/", rootHandler)
+	http.HandleFunc("/members", membersHandler)
 
 	certFile := os.Getenv("CERTFILE_PATH")
 	keyFile := os.Getenv("KEYFILE_PATH")
@@ -48,4 +49,8 @@ func main() {
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello, HTTPS world!")
+}
+
+func membersHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Returing, Ranked members list")
 }
