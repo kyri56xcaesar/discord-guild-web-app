@@ -16,14 +16,22 @@ import (
 )
 
 type Member struct {
-	ID       int      `json:"id"`
-	User     string   `json:"user"`
-	Nick     string   `json:"nick"`
-	Avatar   string   `json:"avatar"`
-	JoinedAt string   `json:"joined_at"`
-	Status   string   `json:"status"`
-	Roles    []string `json:"roles"`
-	MsgCount int      `json:"msg_count"`
+	Guild      string `json:"string"`
+	ID         int    `json:"id"`
+	User       string `json:"user"`
+	Nick       string `json:"nick"`
+	Avatar     string `json:"avatar"`
+	Banner     string `json:"banner"`
+	User_color string `json:"user_color"`
+	JoinedAt   string `json:"joined_at"`
+	Status     string `json:"status"`
+	Roles      []Role `json:"roles"`
+	MsgCount   int    `json:"msg_count"`
+}
+
+type Role struct {
+	Role_name string `json:"role_name"`
+	Color     string `json:"role_color"`
 }
 
 var members []Member
@@ -83,34 +91,24 @@ func getMembersHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func addMemberHandler(w http.ResponseWriter, r *http.Request) {
-	mu.Lock()
-	defer mu.Unlock()
-
-	fmt.Println("A post request has arrived!")
-
 	var newMembers []Member
 	err := json.NewDecoder(r.Body).Decode(&newMembers)
 	if err != nil {
-		log.Println("Error decoding JSON:", err)
+		log.Printf("Error decoding JSON: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// Assign an ID to the new member
-	// Loop through the new members, assign IDs, and add them to the in-memory store
 	for i := range newMembers {
 		newMembers[i].ID = nextID
 		nextID++
 		members = append(members, newMembers[i])
-
-		fmt.Printf("The member is now :%+v\n", newMembers[i])
-
+		// fmt.Printf("The member is now: %+v\n", newMembers[i])
 	}
 
-	// Return the newly added members with the generated IDs
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
-	//json.NewEncoder(w).Encode(newMembers) // Respond with the updated list of members
+	json.NewEncoder(w).Encode(newMembers)
 }
 
 func getMemberByIDHandler(w http.ResponseWriter, r *http.Request) {

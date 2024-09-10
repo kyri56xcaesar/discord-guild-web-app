@@ -3,8 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="styles.css">
-    <title>Document</title>
+    <link rel="stylesheet" type="text/css" href="styles/hof.css">
+    <link rel="stylesheet" type="text/css" href="styles/styles.css">
+    <link rel="stylesheet" type="text/css" href="styles/bots.css">
+    <link rel="stylesheet" type="text/css" href="styles/mobile.css">
+
+
+    <title>$Dads HQ</title>
+    <link rel="icon" href="../assets/mozart_draw.jpg" type="inage.x-icon">
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
 
@@ -20,7 +27,7 @@
         </div>
     
         <div id="title">
-            <h1> $DADS </h1>
+            <h1 id="main-title"></h1>
         </div>
     </div>
 </header>
@@ -100,6 +107,26 @@
             <script  src="scripts/matrix_effect.js"></script>
             <div class="hof-content">
                 
+                <!-- HOF TITLE -->
+                <div id="hof-header">
+                    <!-- animation stop/start toggle button -->
+                    <div id="hof-header-left">
+                        <div class="header-button button-play" id="matrix-control-button">
+                            <!-- <button class="button-controller"></button> -->
+                        </div>
+                        <div class="header-button button-play" id="hof-title-graphics-button">
+                            <!-- <button class="button-controller"></button> -->
+                        </div>
+                    </div>
+                    <h2 id="hof-title" class="fancy-title"></h2>
+                    <div id="hof-header-right">
+                        <div id="month-fetch-controller">
+                            <!-- <button class="button-controller button-play"></button> -->
+                        </div>
+                    </div>
+                    <!-- month controller -->
+                </div>
+                <hr>
                 <ol id="hof-list">
                     <div class="hof-entry">
                
@@ -139,17 +166,17 @@
                             <div class="col-6">
                                 <ul class="list-unstyled">
                                     <li><a href="">Product</a></li>
-                                    <li><a href="">Benefits</a></li>
-                                    <li><a href="">Partners</a></li>
-                                    <li><a href="">Team</a></li>
+                                    <!-- <li><a href="">Benefits</a></li> -->
+                                    <!-- <li><a href="">Partners</a></li> -->
+                                    <!-- <li><a href="">Team</a></li> -->
                                 </ul>
                             </div>
                             <div class="col-6">
                                 <ul class="list-unstyled">
                                     <li><a href="">Documentation</a></li>
-                                    <li><a href="">Support</a></li>
-                                    <li><a href="">Legal Terms</a></li>
-                                    <li><a href="">About</a></li>
+                                    <!-- <li><a href="">Support</a></li> -->
+                                    <!-- <li><a href="">Legal Terms</a></li> -->
+                                    <!-- <li><a href="">About</a></li> -->
                                 </ul>
                             </div>
                         </div>
@@ -162,7 +189,7 @@
                         <br>
                     </div>
                     <div class="col-md-2">
-                        <h5 class="text-md-right">Contact Us</h5>
+                        <h5 class="text-md-right">Contact Me</h5>
                         <hr>
                     </div>
                     <div class="col-md-5">

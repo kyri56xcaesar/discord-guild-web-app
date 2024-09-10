@@ -1,0 +1,309 @@
+:root {
+    --button-height: 2rem;
+    --button-color: #edd;
+}
+
+#hof-display {
+    position: relative;
+    /* overflow: auto; */
+  
+  }
+  
+#hof-display canvas {
+  position: fixed;
+  width: 100%;
+  /* height: 100%; */
+
+  max-height: max-content;
+  z-index: 0;
+}
+  
+
+.hof-content {
+    position: relative;
+    z-index: 1;
+    padding: 20px;
+    color: black;
+
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    
+  
+    width: 100%;
+    height: calc(100% - 500px); /* Adjust height to account for the footer */
+  }
+
+  .hof-content > hr {
+    border: 3px solid gold;
+    border-radius: 3px;
+    width: 100%;
+  }
+  
+
+#hof-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+
+    max-width: 1500;
+}
+
+#hof-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin: 10px 0;
+    border-bottom: 1px solid #ccc;
+
+    max-width: 800px;
+    max-height: 600px;
+    
+}
+
+#roles-display {
+    max-height: 100px;
+    overflow-y: scroll;
+}
+
+.roles-full {
+    overflow-x: scroll;           /* Enable vertical scroll if the content exceeds max height */
+    overflow-y: scroll;
+    white-space: wrap;        /* Prevent line breaks */
+    margin-top: 10px;           /* Add space between the roles and other content */
+    padding: 5px;               /* Optional: Add padding for nicer appearance */
+    border: 1px solid #ccc;     /* Optional: Add a border around the roles */
+    border-radius: 5px;         /* Optional: Make it look nicer with rounded corners */
+}
+
+
+.hof-entry-left {
+    display: flex;
+    align-items: center;
+    
+    width: 400px;
+
+    margin-right: 20px;
+}
+
+.hof-entry-left h1 {
+    margin-right:20px;
+}
+
+.hof-entry-left img {
+    border-radius: 50%;
+    margin-right: 10px;
+    width: 150px;
+    height: 150px;
+
+    border-width: 4px;
+    border-style: solid;
+
+}
+
+.border-color-online {
+    border-color: green;
+}
+
+.border-color-offline {
+    border-color: grey;
+}
+
+.border-color-dnd {
+    border-color: red;
+}
+
+.border-color-idle {
+    border-color: yellow;
+}
+
+.hof-entry-left h3 {
+    margin:0;
+    margin-left: 20px;
+    
+    width: 200px;
+    font-family: fantasy;
+}
+
+.hof-entry-right {
+    text-align: left;
+
+    flex-grow: 1;
+
+    margin-left: 40px;
+
+    max-width: 500px;
+
+    /* font-size: larger; */
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}
+
+.hof-entry-right p {
+    margin: 5px 0;
+    flex-wrap: wrap;
+}
+
+.msg-count {
+    font-size: 1.5em;
+    color: #FF5733;
+    font-weight: bold;
+}
+
+.status-light {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-left: 5px;
+}
+
+.online {
+    background-color: green;
+}
+
+.offline {
+    background-color: rgb(177, 171, 171);
+}
+
+.dnd {
+    background-color: red;
+}
+
+.idle {
+    background-color: yellow;
+}
+
+
+
+
+hr {
+    border: none;
+    height: 2px;
+    background-color: #ccc;
+    margin-top: 20px;
+}
+
+#hof-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 575px;
+}
+
+#hof-header-left {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: start;
+
+    
+}
+
+#hof-header-right {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: end;
+}
+
+#hof-title {
+    flex-grow: 0;
+    text-align: center;
+}
+
+
+
+.fancy-title {
+    font-family: 'Arial', sans-serif;
+    font-size: 2.5em;
+    font-weight: bold;
+    text-align: center;
+    letter-spacing: 2px;
+    color: #d6b709;
+    text-transform: uppercase;
+    background-color: linear-gradient(90deg, #FF5733, #FFC300);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.01);
+    margin: 20px 0;
+    user-select: none;
+
+}
+
+.fancy-title {
+    animation: glow 3s ease-in-out infinite alternate
+}
+
+@keyframes glow {
+    0% {
+        text-shadow: 0 0 15px #FF5733, 0 0 20px #FFC300, 0 0 30px #FFC300;
+        font-size: large;
+    }
+    100% {
+        text-shadow: 0 0 0px #FF5733, 0 0 5px #FFC300, 0 0 10px #FFC300;
+        font-size: xx-large;
+    }
+}
+
+.button-controller {
+    user-select: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 16px;
+
+    position: relative;
+    /* border-radius: 50%; */
+    
+    background-color: transparent;
+    width: 50px;
+    height: 50px;
+    border: 3px solid #000;
+    transition: background-color 0.3s ease;
+}
+
+.header-button  {
+    display: inline-block;
+    margin: 10px;
+    padding: 0;
+}
+
+.button-controller.play::before {
+    content: "";
+    position: absolute;
+    left: 19px;
+    top: 13px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 10px 0 10px 15px;
+    border-color: transparent transparent transparent white
+    
+}
+
+
+.button-controller.pause::before,
+.button-controller.pause::after {
+    content: "";
+    position: absolute;
+    top: 13px;
+    width: 6px;
+    height: 25px;
+    background-color: inherit;
+}
+
+
+.button-controller.pause:before {
+    left: 14px;
+}
+
+.button-controller.pause:after {
+    left: 28px;
+}
