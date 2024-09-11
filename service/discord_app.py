@@ -116,7 +116,7 @@ if __name__ == "__main__":
     
 
     token = os.getenv('DISCORD_TOKEN')
-    print(f'TOKEN: {token}')
+    # print(f'TOKEN: {token}')
     client.run(token)
 
 

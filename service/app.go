@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/gorilla/handlers"
@@ -50,7 +49,7 @@ func main() {
 	https_port := os.Getenv("HTTPS_PORT")
 	ip := os.Getenv("IP")
 
-	fmt.Printf("ip: %v, certFile_path: %v\nkeyFile_path: %v\nhttp_port: %v\nhttps_port: %v\n", ip, certFile, keyFile, http_port, https_port)
+	//fmt.Printf("ip: %v, certFile_path: %v\nkeyFile_path: %v\nhttp_port: %v\nhttps_port: %v\n", ip, certFile, keyFile, http_port, https_port)
 
 	if ip == "" || (https_port == "" && http_port == "") || certFile == "" || keyFile == "" {
 		log.Fatalf("Required environment variables are missing")

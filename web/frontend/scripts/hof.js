@@ -1,27 +1,46 @@
 var guild_name = '$DADS';
+IP = 'localhost';
+// IP = '85.75.213.54'
+PORT = '6969'
 
-let headersList = {
-    "Accept": "*/*",
-    "Content-Type": "application/json"
-   }
+
+// Include axios if you're using a CDN
+// <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
 async function fetchMembers() {
-    let response = await fetch("http://localhost:6969/guild/members", { 
-        method: "GET",
-        headers: headersList
-      });
-      
-      let data = await response.json();
+    try {
+        const response = await axios.get("http://"+IP+":"+PORT+"/guild/members", {
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+        
+        console.log(response.data);  // Log the response data
+        data = response.data;
+        guild_name = data[0].guild;
+        data.sort(function(first, second) {
+            return second.msg_count - first.msg_count
+        })
 
-      guild_name = data[0].guild;
-      data.sort(function(first, second) {
-        return second.msg_count - first.msg_count
-      })
+        console.log(data);
+        displayMembers(data);
 
-      console.log(data);
-      displayMembers(data);
-      
+    } catch (error) {
+        // Log detailed error information
+        if (error.response) {
+            console.error("Error in response:", error.response.status, error.response.data);
+        } else if (error.request) {
+            console.error("Error in request:", error.request);
+        } else {
+            console.error("General Error:", error.message);
+        }
+    }
 }
+
+fetchMembers();
+
+
+
 
 function setMainTitle(guild_name) {
     let mainTitle = document.getElementById('main-title');
@@ -100,7 +119,6 @@ function displayMembers(data) {
     
 }
 
-fetchMembers();
 
 
 // Graphics buttons

@@ -1,0 +1,20 @@
+FROM golang:latest
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY *.go ./
+COPY .env ./
+
+ENV PORT=${HTTP_PORT}
+
+# Build the Go application
+RUN go build -o app ./app.go
+
+# Expose the specified port (replace ${HTTP_PORT} with a default port if needed)
+EXPOSE ${HTTP_PORT}
+
+# Command to run the Go application
+CMD ["./app"]

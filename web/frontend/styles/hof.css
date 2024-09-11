@@ -87,6 +87,8 @@
     width: 400px;
 
     margin-right: 20px;
+
+    user-select: none;
 }
 
 .hof-entry-left h1 {
