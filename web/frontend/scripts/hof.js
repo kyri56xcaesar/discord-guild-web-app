@@ -15,7 +15,6 @@ async function fetchMembers() {
             }
         });
         
-        console.log(response.data);  // Log the response data
         data = response.data;
         guild_name = data[0].guild;
         data.sort(function(first, second) {
@@ -119,14 +118,16 @@ function displayMembers(data) {
     
 }
 
+const title = document.getElementById('hof-title');
 
 
-// Graphics buttons
-function toggleMatrixEffect(){
-    console.log();
+function toggleTitleAnimation() {
+
+    console.log('Tittle effect toggle');
+    
+    if (title.style.animationPlayState === 'paused') {
+        title.style.animationPlayState = 'running'; // Resume the animation
+    } else {
+        title.style.animationPlayState = 'paused';  // Pause the animation (freeze)
+    }
 }
-
-function toggleTitleEffect() {
-    console.log()
-}
-

@@ -1,5 +1,6 @@
 @import url(https://fonts.googleapis.com/css?family=Alegreya+Sans:300);
 
+/* general */
 
 html {
   position: relative;
@@ -25,6 +26,8 @@ canvas {
 }
 
 
+
+/* Header */
 .sidebar-affected {
   transition: margin-left 1.25s ease;
 }
@@ -39,17 +42,28 @@ canvas {
   display: flex;  
   justify-content: start;
   align-items: center;
+  align-content: center;
 
   background: linear-gradient(to bottom, rgb(196, 149, 49), #ffffff);
 }
 
-#navbtn {
-  position: relative;
-  padding-bottom: 100px;
-}
 
 #title {
   position: center;
+}
+
+
+
+/* Siderbar */
+
+#navbtn {
+
+  /* position: relative; */
+
+  transition: margin-left .5s;
+  padding: 14px;
+
+  margin-top: 5px;
 }
 
 
@@ -160,10 +174,11 @@ canvas {
   border: 1px solid #c3c984;
 }
   
-#navbtn {
-  transition: margin-left .5s;
-  padding: 16px;
-}
+
+
+
+
+
   
 /* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
 @media screen and (max-height: 450px) {

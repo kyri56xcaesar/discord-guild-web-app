@@ -202,7 +202,8 @@ hr {
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: start;
+    justify-content: left;
+    gap: 20px;
 
     
 }
@@ -223,6 +224,10 @@ hr {
 
 
 .fancy-title {
+
+    animation: glow 3s ease-in-out infinite alternate;
+    animation-play-state: running;
+
     font-family: 'Arial', sans-serif;
     font-size: 2.5em;
     font-weight: bold;
@@ -240,10 +245,6 @@ hr {
 
 }
 
-.fancy-title {
-    animation: glow 3s ease-in-out infinite alternate
-}
-
 @keyframes glow {
     0% {
         text-shadow: 0 0 15px #FF5733, 0 0 20px #FFC300, 0 0 30px #FFC300;
@@ -255,57 +256,149 @@ hr {
     }
 }
 
-.button-controller {
-    user-select: none;
-    padding: 10px 15px;
-    cursor: pointer;
-    font-size: 16px;
 
+/*  Hof graphics buttons controllers */
+
+/* From Uiverse.io by Nawsome */ 
+.matrix-switch,
+.title-effect-switch {
+    display: block;
+    background-color: black;
+    width: 50px; /* Smaller width */
+    height: 60px; /* Smaller height */
+    box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.2), 0 0 1px 1px black, inset 0 1px 1px -1px white, inset 0 0 1px 10px #47434c, inset 0 0 1px 15px black; /* Smaller shadow */
+    border-radius: 5px;
+    padding: 5px; /* Adjusted padding */
+    perspective: 700px;
+  }
+  
+  .matrix-switch input,
+  .title-effect-switch input {
+    display: none;
+  }
+  
+  .matrix-switch input:checked + .matrix-button,
+  .title-effect-switch input:checked + .title-effect-button {
+    transform: translateZ(15px) rotateX(20deg);
+    box-shadow: 0 -5px 15px #ffbf00; /* Golden shadow */
+  }
+  
+  .matrix-switch input:checked + .matrix-button .matrix-light,
+  .title-effect-switch input:checked + .title-effect-button .title-effect-light {
+    animation: matrix-flicker 0.2s infinite 0.3s;
+  }
+  
+  .matrix-switch input:checked + .matrix-button .matrix-shine {
+    opacity: 1;
+  }
+  
+  .matrix-switch input:checked + .matrix-button .matrix-shadow {
+    opacity: 0;
+  }
+  
+  .matrix-button {
+    display: block;
+    transition: all 0.3s cubic-bezier(1, 0, 1, 1);
+    transform-origin: center center -15px;
+    transform: translateZ(15px) rotateX(-20deg);
+    transform-style: preserve-3d;
+    background-color: #ffbf00; /* Yellowish-golden base */
+    height: 100%;
     position: relative;
-    /* border-radius: 50%; */
-    
-    background-color: transparent;
-    width: 50px;
-    height: 50px;
-    border: 3px solid #000;
-    transition: background-color 0.3s ease;
-}
-
-.header-button  {
-    display: inline-block;
-    margin: 10px;
-    padding: 0;
-}
-
-.button-controller.play::before {
+    cursor: pointer;
+    background: linear-gradient(#ffbf00 0%, #e5ac00 30%, #e5ac00 70%, #ffbf00 100%);
+    background-repeat: no-repeat;
+  }
+  
+  .matrix-button::before {
     content: "";
+    background: linear-gradient(rgba(255, 255, 255, 0.8) 10%, rgba(255, 255, 255, 0.3) 30%, #e5ac00 75%, #b38b00) 50% 50%/97% 97%, #ffbf00;
+    background-repeat: no-repeat;
+    width: 100%;
+    height: 25px; /* Adjusted for smaller button */
+    transform-origin: top;
+    transform: rotateX(-90deg);
     position: absolute;
-    left: 19px;
-    top: 13px;
-    width: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 10px 0 10px 15px;
-    border-color: transparent transparent transparent white
-    
-}
-
-
-.button-controller.pause::before,
-.button-controller.pause::after {
+    top: 0;
+  }
+  
+  .matrix-button::after {
     content: "";
+    background-image: linear-gradient(#b38b00, #7f5c00);
+    width: 100%;
+    height: 25px; /* Adjusted for smaller button */
+    transform-origin: top;
+    transform: translateY(25px) rotateX(-90deg);
     position: absolute;
-    top: 13px;
-    width: 6px;
-    height: 25px;
-    background-color: inherit;
-}
-
-
-.button-controller.pause:before {
-    left: 14px;
-}
-
-.button-controller.pause:after {
-    left: 28px;
-}
+    bottom: 0;
+    box-shadow: 0 30px 5px 0px black, 0 50px 10px 0px rgba(0, 0, 0, 0.5);
+  }
+  
+  .matrix-light {
+    opacity: 0;
+    animation: matrix-light-off 1s;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: radial-gradient(#ffe680, #ffbf00 40%, transparent 70%); /* Lighter golden gradient */
+  }
+  
+  .matrix-dots {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: radial-gradient(transparent 30%, rgba(229, 172, 0, 0.7) 70%); /* Adjusted for golden tones */
+    background-size: 10px 10px;
+  }
+  
+  .matrix-characters {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(white, white) 50% 20%/5% 20%, radial-gradient(circle, transparent 50%, white 52%, white 70%, transparent 72%) 50% 80%/33% 25%;
+    background-repeat: no-repeat;
+  }
+  
+  .matrix-shine {
+    transition: all 0.3s cubic-bezier(1, 0, 1, 1);
+    opacity: 0.3;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(white, transparent 3%) 50% 50%/97% 97%, linear-gradient(rgba(255, 255, 255, 0.5), transparent 50%, transparent 80%, rgba(255, 255, 255, 0.5)) 50% 50%/97% 97%;
+    background-repeat: no-repeat;
+  }
+  
+  .matrix-shadow {
+    transition: all 0.3s cubic-bezier(1, 0, 1, 1);
+    opacity: 1;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(transparent 70%, rgba(0, 0, 0, 0.8));
+    background-repeat: no-repeat;
+  }
+  
+  @keyframes matrix-flicker {
+    0% {
+      opacity: 1;
+    }
+  
+    80% {
+      opacity: 0.8;
+    }
+  
+    100% {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes matrix-light-off {
+    0% {
+      opacity: 1;
+    }
+  
+    80% {
+      opacity: 0;
+    }
+  }

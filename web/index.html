@@ -25,6 +25,7 @@
 
         <div id="navbtn">
             <button id="togglebtn" class="openbtn" onclick="toggleNav()">More</button>
+            
         </div>
     
         <div id="title">
@@ -105,24 +106,41 @@
         <div class="content-display" id="hof-display">
             
             <canvas id="matrixCanvas"></canvas>
-            <script  src="frontend/scripts/matrix_effect.js"></script>
             <div class="hof-content">
                 
                 <!-- HOF TITLE -->
                 <div id="hof-header">
                     <!-- animation stop/start toggle button -->
                     <div id="hof-header-left">
-                        <div class="header-button button-play" id="matrix-control-button">
-                            <!-- <button class="button-controller"></button> -->
+                        <div class="header-button" id="matrix-control-button">
+                            <label class="matrix-switch" >
+                                <input type="checkbox" checked="checked" onclick="toggleMatrixEffect()">
+                                <div class="matrix-button">
+                                    <div class="matrix-light"></div>
+                                    <div class="matrix-dots"></div>
+                                    <div class="matrix-characters"></div>
+                                    <div class="matrix-shine"></div>
+                                    <div class="matrix-shadow"></div>
+                                </div>
+                              </label>
                         </div>
-                        <div class="header-button button-play" id="hof-title-graphics-button">
-                            <!-- <button class="button-controller"></button> -->
+                        <div class="header-button" id="hof-title-graphics-button">
+                            <label class="matrix-switch">
+                                <input type="checkbox" checked="checked" onclick="toggleTitleAnimation()">
+                                <div class="matrix-button">
+                                    <div class="matrix-light"></div>
+                                    <div class="matrix-dots"></div>
+                                    <div class="matrix-characters"></div>
+                                    <div class="matrix-shine"></div>
+                                    <div class="matrix-shadow"></div>
+                                </div>
+                            </label>
                         </div>
                     </div>
                     <h2 id="hof-title" class="fancy-title"></h2>
                     <div id="hof-header-right">
                         <div id="month-fetch-controller">
-                            <!-- <button class="button-controller button-play"></button> -->
+
                         </div>
                     </div>
                     <!-- month controller -->
@@ -136,7 +154,7 @@
     
             </div>
             <div id="turn-off-btn">
-                <div class="matrix-btn-part2" onclick="toggleMatrixEffect()"></div>
+                <div class="matrix-btn-part2"></div>
             </div>
 
         </div>
@@ -224,6 +242,8 @@
     <script src="frontend/scripts/index.js"></script>
     <script src="frontend/scripts/hof.js"></script>
     <script src="frontend/scripts/bots.js"></script>
+    <script  src="frontend/scripts/matrix_effect.js"></script>
+
     
 </body>
 
