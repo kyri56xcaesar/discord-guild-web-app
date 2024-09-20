@@ -68,10 +68,10 @@ function toggleMatrixEffect(event) {
     if (matrixActive) {
         clearInterval(matrixInterval); // Stop the matrix effect
         matrixActive = false;
-        console.log("Matrix effect stopped");
+        // console.log("Matrix effect stopped");
     } else {
         matrixInterval = setInterval(draw, 60); // Start the matrix effect
         matrixActive = true;
-        console.log("Matrix effect started");
+        // console.log("Matrix effect started");
     }
 }

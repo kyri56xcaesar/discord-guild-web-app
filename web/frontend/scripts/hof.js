@@ -4,6 +4,30 @@ IP = 'localhost';
 PORT = '6969'
 
 
+// Utility functions
+function formatDate(dateString) {
+    const date = new Date(dateString);
+
+    return date.toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'})
+    
+}
+
+function hexToRGBA(hex_string, alpha = 1) {
+    hex_string = hex_string.replace(/^#/, '');
+
+    if (hex_string.length === 3) {
+        hex = hex.split('').map(char => char + char).join('');
+    }
+
+    const r = parseInt(hex_string.substring(0, 2), 16);
+    const g = parseInt(hex_string.substring(2, 4), 16);
+    const b = parseInt(hex_string.substring(4, 6), 16);
+
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+
+
 // Include axios if you're using a CDN
 // <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
@@ -41,6 +65,9 @@ fetchMembers();
 
 
 
+
+
+// Display functions and setups
 function setMainTitle(guild_name) {
     let mainTitle = document.getElementById('main-title');
 
@@ -63,19 +90,22 @@ setHofTitle(guild_name);
 
 
 
-function formatDate(dateString) {
-    const date = new Date(dateString);
-
-    return date.toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'})
-    
-}
 
 function displayMembers(data) {
     const hof_list = document.getElementById('hof-list');
 
     data.forEach((member, index) => {
         let li = document.createElement('li');
-        
+        li.setAttribute('id', `hof-entry-${index + 1}`);
+        li.setAttribute('class', 'hof-entry')
+
+        li.style=`background-color: ${hexToRGBA(member.user_color, 0.08)}; background: url(${member.banner})`
+
+        console.log('avatar: ' + member.avatar + 'banner: ' + member.banner);
+
+        if (index != 0 && index != 1 && index != 2) li.style.borderBottom = '1px solid #ccc';
+
+
 
         li.innerHTML = `
             <div class="hof-entry-left">
@@ -123,7 +153,7 @@ const title = document.getElementById('hof-title');
 
 function toggleTitleAnimation() {
 
-    console.log('Tittle effect toggle');
+    // console.log('Tittle effect toggle');
     
     if (title.style.animationPlayState === 'paused') {
         title.style.animationPlayState = 'running'; // Resume the animation
@@ -131,3 +161,11 @@ function toggleTitleAnimation() {
         title.style.animationPlayState = 'paused';  // Pause the animation (freeze)
     }
 }
+
+
+const matrix_switch = document.getElementById('matrix-switch');
+const title_effect_switch = docuemnt.getElementById('title-effect-switch');
+
+matrix_switch.setAttribute('checked', 'checked');
+title_effect_switch.setAttribute('checked', 'checked');
+

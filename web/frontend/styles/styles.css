@@ -210,6 +210,25 @@ canvas {
 }
 
 
+#hof-display {
+  position: relative;
+  /* overflow: auto; */
+
+  display: none;
+}
+
+
+#bots-display {
+
+  position: relative;
+
+  /* display: none; */
+
+  width: 100%;
+
+  /* overflow: scroll; */
+}
+
 
 
 

@@ -3,12 +3,7 @@
     --button-color: #edd;
 }
 
-#hof-display {
-    position: relative;
-    /* overflow: auto; */
-  
-  }
-  
+
 #hof-display canvas {
   position: fixed;
   width: 100%;
@@ -57,12 +52,36 @@
     align-items: center;
     padding: 10px;
     margin: 10px 0;
-    border-bottom: 1px solid #ccc;
+    /* border-bottom: 1px solid #ccc; */
 
-    max-width: 800px;
+    max-width: 1000px;
     max-height: 600px;
     
 }
+
+#hof-entry-1, #hof-entry-2, #hof-entry-3 {
+  border-radius: 15px;
+
+}
+
+
+#hof-entry-1 {
+  
+  border: 5px solid gold;
+  
+}
+
+#hof-entry-2 {
+  border: 5px solid silver;
+
+
+}
+
+#hof-entry-3 {
+  border: 5px solid #CD7F32;
+
+}
+
 
 #roles-display {
     max-height: 100px;
@@ -84,7 +103,7 @@
     display: flex;
     align-items: center;
     
-    width: 400px;
+    /* width: 400px; */
 
     margin-right: 20px;
 
@@ -93,6 +112,14 @@
 
 .hof-entry-left h1 {
     margin-right:20px;
+
+    width: 89px;
+    /* padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 5px; */
+
+    /* border: dotted 2px rgb(58, 43, 2);
+    border-radius: 10px; */
 }
 
 .hof-entry-left img {
@@ -103,6 +130,12 @@
 
     border-width: 4px;
     border-style: solid;
+
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -o-user-select: none;
+    user-select: none;
 
 }
 
@@ -126,7 +159,7 @@
     margin:0;
     margin-left: 20px;
     
-    width: 200px;
+    width: 300px;
     font-family: fantasy;
 }
 
@@ -204,8 +237,7 @@ hr {
     align-items: center;
     justify-content: left;
     gap: 20px;
-
-    
+ 
 }
 
 #hof-header-right {
@@ -288,17 +320,20 @@ hr {
     animation: matrix-flicker 0.2s infinite 0.3s;
   }
   
-  .matrix-switch input:checked + .matrix-button .matrix-shine {
+  .matrix-switch input:checked + .matrix-button .matrix-shine,
+  .title-effect-switch input:checked + .title-effect-button .title-effect-shine{
     opacity: 1;
   }
   
-  .matrix-switch input:checked + .matrix-button .matrix-shadow {
+  .matrix-switch input:checked + .matrix-button .matrix-shadow,
+  .title-effect-switch input:checked + .title-effect-button .title-effect-shadow {
     opacity: 0;
   }
   
-  .matrix-button {
+  .matrix-button,
+  .title-effect-button {
     display: block;
-    transition: all 0.3s cubic-bezier(1, 0, 1, 1);
+    transition: all 0.1s cubic-bezier(1, 0, 1, 1);
     transform-origin: center center -15px;
     transform: translateZ(15px) rotateX(-20deg);
     transform-style: preserve-3d;
@@ -310,7 +345,8 @@ hr {
     background-repeat: no-repeat;
   }
   
-  .matrix-button::before {
+  .matrix-button::before,
+  .title-effect-button::before {
     content: "";
     background: linear-gradient(rgba(255, 255, 255, 0.8) 10%, rgba(255, 255, 255, 0.3) 30%, #e5ac00 75%, #b38b00) 50% 50%/97% 97%, #ffbf00;
     background-repeat: no-repeat;
@@ -322,7 +358,8 @@ hr {
     top: 0;
   }
   
-  .matrix-button::after {
+  .matrix-button::after,
+  .title-effect-button::after {
     content: "";
     background-image: linear-gradient(#b38b00, #7f5c00);
     width: 100%;
@@ -334,7 +371,8 @@ hr {
     box-shadow: 0 30px 5px 0px black, 0 50px 10px 0px rgba(0, 0, 0, 0.5);
   }
   
-  .matrix-light {
+  .matrix-light,
+  .title-effect-light {
     opacity: 0;
     animation: matrix-light-off 1s;
     position: absolute;
@@ -343,7 +381,8 @@ hr {
     background-image: radial-gradient(#ffe680, #ffbf00 40%, transparent 70%); /* Lighter golden gradient */
   }
   
-  .matrix-dots {
+  .matrix-dots,
+  .title-effect-dots {
     position: absolute;
     width: 100%;
     height: 100%;
@@ -351,7 +390,8 @@ hr {
     background-size: 10px 10px;
   }
   
-  .matrix-characters {
+  .matrix-characters,
+  .title-effect-characters {
     position: absolute;
     width: 100%;
     height: 100%;
@@ -359,8 +399,9 @@ hr {
     background-repeat: no-repeat;
   }
   
-  .matrix-shine {
-    transition: all 0.3s cubic-bezier(1, 0, 1, 1);
+  .matrix-shine,
+  .title-effect-shine {
+    transition: all 0.1s cubic-bezier(1, 0, 1, 1);
     opacity: 0.3;
     position: absolute;
     width: 100%;
@@ -369,8 +410,9 @@ hr {
     background-repeat: no-repeat;
   }
   
-  .matrix-shadow {
-    transition: all 0.3s cubic-bezier(1, 0, 1, 1);
+  .matrix-shadow,
+  .title-effect-shadow {
+    transition: all 0.1s cubic-bezier(1, 0, 1, 1);
     opacity: 1;
     position: absolute;
     width: 100%;

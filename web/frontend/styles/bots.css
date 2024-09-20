@@ -1,16 +1,6 @@
 /* MAIN BOTS CONTENT */
 
-#bots-display {
 
-    position: relative;
-  
-    display: none;
-  
-    width: 100%;
-  
-    /* overflow: scroll; */
-  }
-  
 #bots-main-container {
   
   padding: 5px;

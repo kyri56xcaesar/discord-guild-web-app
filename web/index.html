@@ -67,6 +67,7 @@
                         <div id="dads-img">
                             <img src="assets/mozart_draw.jpg" class="rotatable-image" draggable="false">
                         </div>
+                        <!--  These spans will be created dynamically -->
                         <span style="--i:0;"></span>
                         <span style="--i:1;"></span>
                         <span style="--i:2;"></span>
@@ -114,7 +115,7 @@
                     <div id="hof-header-left">
                         <div class="header-button" id="matrix-control-button">
                             <label class="matrix-switch" >
-                                <input type="checkbox" checked="checked" onclick="toggleMatrixEffect()">
+                                <input id="matrix-switch" type="checkbox" checked="checked" onclick="toggleMatrixEffect()">
                                 <div class="matrix-button">
                                     <div class="matrix-light"></div>
                                     <div class="matrix-dots"></div>
@@ -125,14 +126,14 @@
                               </label>
                         </div>
                         <div class="header-button" id="hof-title-graphics-button">
-                            <label class="matrix-switch">
-                                <input type="checkbox" checked="checked" onclick="toggleTitleAnimation()">
-                                <div class="matrix-button">
-                                    <div class="matrix-light"></div>
-                                    <div class="matrix-dots"></div>
-                                    <div class="matrix-characters"></div>
-                                    <div class="matrix-shine"></div>
-                                    <div class="matrix-shadow"></div>
+                            <label class="title-effect-switch">
+                                <input id="title-effect-switch" type="checkbox" checked="checked" onclick="toggleTitleAnimation()">
+                                <div class="title-effect-button">
+                                    <div class="title-effect-light"></div>
+                                    <div class="title-effect-dots"></div>
+                                    <div class="title-effect-characters"></div>
+                                    <div class="title-effect-shine"></div>
+                                    <div class="title-effect-shadow"></div>
                                 </div>
                             </label>
                         </div>
@@ -147,9 +148,7 @@
                 </div>
                 <hr>
                 <ol id="hof-list">
-                    <div class="hof-entry">
-               
-                    </div>
+   
                 </ol>
     
             </div>
