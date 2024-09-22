@@ -101,16 +101,16 @@ function displayMembers(data) {
 
         li.style=`background-color: ${hexToRGBA(member.user_color, 0.08)}; background: url(${member.banner})`
 
-        console.log('avatar: ' + member.avatar + 'banner: ' + member.banner);
+        // console.log('avatar: ' + member.avatar + 'banner: ' + member.banner);
 
         if (index != 0 && index != 1 && index != 2) li.style.borderBottom = '1px solid #ccc';
 
-
+        const default_icon = "assets/mozart_draw.jpg";
 
         li.innerHTML = `
             <div class="hof-entry-left">
                 <h1>${index + 1}.</h1>
-                <img class="border-color-${member.status}"src="${member.avatar}" alt="${member.member}'s avatar" />
+                <img class="border-color-${member.status}"src="${member.avatar === 'None' ? default_icon : member.avatar}" alt="${default_icon}" />
                 <h3>${member.user} <br>(${member.nick || 'No Nick'})</h3>
             </div>
 
@@ -164,7 +164,7 @@ function toggleTitleAnimation() {
 
 
 const matrix_switch = document.getElementById('matrix-switch');
-const title_effect_switch = docuemnt.getElementById('title-effect-switch');
+const title_effect_switch = document.getElementById('title-effect-switch');
 
 matrix_switch.setAttribute('checked', 'checked');
 title_effect_switch.setAttribute('checked', 'checked');

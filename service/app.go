@@ -14,12 +14,13 @@ import (
 	"sync"
 
 	"kyri56xcaesar/discord_bots_app/guild/user"
+	"kyri56xcaesar/discord_bots_app/servicedb"
 )
 
 var next_user_ID, next_bot_ID = 1, 1
 
 var mu sync.Mutex
-var members []user.Member
+var members []user.User
 var bots []user.Bot
 
 func main() {
@@ -34,11 +35,28 @@ func main() {
 	https_port := os.Getenv("HTTPS_PORT")
 	ip := os.Getenv("IP")
 
-	fmt.Printf("ip: %v, certFile_path: %v\nkeyFile_path: %v\nhttp_port: %v\nhttps_port: %v\n", ip, certFile, keyFile, http_port, https_port)
+	fmt.Printf("ip: %v, certFile: %v\nkeyFile: %v\nhttp_port: %v\nhttps_port: %v\n", ip, certFile, keyFile, http_port, https_port)
 
 	if ip == "" || (https_port == "" && http_port == "") || certFile == "" || keyFile == "" {
 		log.Fatalf("Required environment variables are missing")
 	}
+
+	// Create and init the database!
+	var dbHandler servicedb.DBHandler
+	_, err = dbHandler.OpenConnection(servicedb.DBName)
+	if err != nil {
+		log.Print("Error initializing database connection..., will continue in mem: " + err.Error())
+	}
+	fileContent, err := os.ReadFile("servicedb/db_init.sql")
+
+	var content string
+	if err != nil {
+		log.Printf("There was an error reading the sql file, will use a default instead...")
+		content = servicedb.INITsql
+	} else {
+		content = string(fileContent)
+	}
+	dbHandler.RunSQLscript(content)
 
 	r := mux.NewRouter()
 
@@ -76,12 +94,21 @@ func userHandler(w http.ResponseWriter, r *http.Request) {
 	case "members":
 		if r.Method == "GET" {
 
+			go func() {
+				res, err := servicedb.GetAllMembers()
+				if err != nil {
+					log.Printf("There's been an error brother...")
+				}
+
+				log.Printf("The result of this thing is: %v\n", res)
+			}()
+
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(members)
 
 		} else if r.Method == "POST" {
 
-			var newMembers []user.Member
+			var newMembers []user.User
 			err := json.NewDecoder(r.Body).Decode(&newMembers)
 			if err != nil {
 				log.Printf("Error decoding JSON: %v", err)
@@ -95,6 +122,17 @@ func userHandler(w http.ResponseWriter, r *http.Request) {
 				members = append(members, newMembers[i])
 				// fmt.Printf("The member is now: %+v\n", newMembers[i])
 			}
+
+			fmt.Print(newMembers[0])
+
+			go func() {
+				res, err := servicedb.InsertMember(newMembers[0])
+				if err != nil {
+					log.Printf("There's been an error brother...")
+				}
+
+				log.Printf("The result of this thing is: %v\n", res)
+			}()
 
 			w.WriteHeader(http.StatusCreated)
 			w.Header().Set("Content-Type", "application/json")
