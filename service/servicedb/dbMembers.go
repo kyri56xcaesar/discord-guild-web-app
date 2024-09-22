@@ -1,7 +1,9 @@
 package servicedb
 
 import (
+	"database/sql"
 	"log"
+	"regexp"
 	"strconv"
 
 	"kyri56xcaesar/discord_bots_app/guild/user"
@@ -24,12 +26,11 @@ func InsertMember(u user.User) (string, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	db := dbHandler.DB
-	defer db.Close()
+	defer dbHandler.DB.Close()
 
-	res, err := db.Exec(`INSERT INTO members (guild, id, username, nickname, avatarurl, displayavatarurl, bannerurl, displaybannerurl, usercolor, joinedat, userstatus, msgcount) 
+	res, err := dbHandler.DB.Exec(`INSERT INTO members (guild, id, username, nickname, avatarurl, displayavatarurl, bannerurl, displaybannerurl, usercolor, joinedat, userstatus, msgcount) 
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		u.Guild, u.ID, u.User, u.Nick, u.Avatar, u.DisplayBanner, u.Banner,
+		u.Guild, u.ID, u.Username, u.Nick, u.Avatar, u.DisplayBanner, u.Banner,
 		u.DisplayBanner, u.User_color, u.JoinedAt, u.Status, u.MsgCount)
 
 	if err != nil {
@@ -47,8 +48,55 @@ func InsertMember(u user.User) (string, error) {
 }
 
 func InsertMultipleMembers(members []user.User) (string, error) {
+	var dBHandler DBHandler
 
-	return "", nil
+	dbHandler, err := dBHandler.OpenConnection(DBName)
+	if err != nil {
+		log.Printf("There's been an error creating the DB handler: %v", err)
+		return "Failed to create DB handler", err
+	}
+	defer dbHandler.DB.Close()
+
+	mu := &dbHandler.MU
+	mu.Lock()
+	defer mu.Unlock()
+
+	db := dbHandler.DB
+
+	// Start a transaction
+	tx, err := db.Begin()
+	if err != nil {
+		log.Printf("Failed to begin transaction: %v", err)
+		return "Failed to begin transaction", err
+	}
+
+	// Prepare the SQL statement for inserting members
+	stmt, err := tx.Prepare(`INSERT INTO members (guild, id, username, nickname, avatarurl, displayavatarurl, bannerurl, displaybannerurl, usercolor, joinedat, userstatus, msgcount) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+	if err != nil {
+		log.Printf("Failed to prepare statement: %v", err)
+		return "Failed to prepare statement", err
+	}
+	defer stmt.Close() // Ensure the statement is closed after use
+
+	for _, u := range members {
+		_, err := stmt.Exec(u.Guild, u.ID, u.Username, u.Nick, u.Avatar, u.DisplayAvatar, u.Banner,
+			u.DisplayBanner, u.User_color, u.JoinedAt, u.Status, u.MsgCount)
+		if err != nil {
+			log.Printf("Failed to insert member %v: %v", u, err)
+			// Rollback the transaction if there's an error
+			tx.Rollback()
+			return "Error inserting member", err
+		}
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		log.Printf("Failed to commit transaction: %v", err)
+		return "Failed to commit transaction", err
+	}
+
+	return "Members inserted successfully", nil
 }
 
 func GetAllMembers() ([]user.User, error) {
@@ -66,10 +114,9 @@ func GetAllMembers() ([]user.User, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	db := dbHandler.DB
-	defer db.Close()
+	defer dbHandler.DB.Close()
 
-	rows, err := db.Query("SELECT * FROM members")
+	rows, err := dbHandler.DB.Query("SELECT * FROM members")
 	if err != nil {
 		log.Printf("There is been an error retrieving members from the database." + err.Error())
 		return nil, err
@@ -79,7 +126,11 @@ func GetAllMembers() ([]user.User, error) {
 	for rows.Next() {
 
 		var user user.User
-		if err := rows.Scan(&user.ID, &user.Guild, &user.User, &user.Nick, &user.Avatar, &user.DisplayAvatar, &user.Banner, &user.DisplayBanner, &user.User_color, &user.JoinedAt, &user.Status, &user.MsgCount); err != nil {
+		if err := rows.Scan(&user.ID, &user.Guild, &user.Username, &user.Nick,
+			&user.Avatar, &user.DisplayAvatar,
+			&user.Banner, &user.DisplayBanner,
+			&user.User_color, &user.JoinedAt,
+			&user.Status, &user.MsgCount); err != nil {
 			log.Printf("There's been an error scanning a user from the database." + err.Error())
 			return nil, err
 		}
@@ -91,7 +142,12 @@ func GetAllMembers() ([]user.User, error) {
 
 }
 
-func GetMemberByID(id int) (*user.User, error) {
+func isNumeric(s string) bool {
+	re := regexp.MustCompile(`^[0-9]+$`)
+	return re.MatchString(s)
+}
+
+func GetMemberByIdentifier(identifier string) (*user.User, error) {
 	var dBHandler DBHandler
 
 	dbHandler, err := dBHandler.OpenConnection(DBName)
@@ -105,10 +161,16 @@ func GetMemberByID(id int) (*user.User, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	db := dbHandler.DB
-	defer db.Close()
+	defer dbHandler.DB.Close()
 
-	row := db.QueryRow("SELECT * FROM members WHERE uid = ?", id)
+	var row *sql.Row
+
+	if isNumeric(identifier) {
+		row = dbHandler.DB.QueryRow("SELECT * FROM members WHERE id = ?", identifier)
+	} else {
+		row = dbHandler.DB.QueryRow("SELECT * FROM members WHERE username = ?", identifier)
+
+	}
 	// if err != nil {
 	// 	log.Printf("There is been an error retrieving members from the database." + err.Error())
 	// 	return nil, err
@@ -116,7 +178,7 @@ func GetMemberByID(id int) (*user.User, error) {
 
 	user := user.User{}
 
-	if err := row.Scan(&user.ID, &user.Guild, &user.User, &user.Nick, &user.Avatar, &user.DisplayAvatar, &user.Banner, &user.DisplayBanner, &user.User_color, &user.JoinedAt, &user.Status, &user.MsgCount); err != nil {
+	if err := row.Scan(&user.ID, &user.Guild, &user.Username, &user.Nick, &user.Avatar, &user.DisplayAvatar, &user.Banner, &user.DisplayBanner, &user.User_color, &user.JoinedAt, &user.Status, &user.MsgCount); err != nil {
 		log.Printf("There's been an error scanning the member from the row." + err.Error())
 		return nil, err
 	}
@@ -124,40 +186,7 @@ func GetMemberByID(id int) (*user.User, error) {
 	return &user, nil
 }
 
-func GetMemberByName(name string) (*user.User, error) {
-	var dBHandler DBHandler
-
-	dbHandler, err := dBHandler.OpenConnection(DBName)
-	if err != nil {
-		log.Printf("There's been an error creating the DB handler..." + err.Error())
-		return nil, err
-	}
-
-	mu := &dBHandler.MU
-
-	mu.Lock()
-	defer mu.Unlock()
-
-	db := dbHandler.DB
-	defer db.Close()
-
-	row := db.QueryRow("SELECT * FROM members WHERE username = ?", name)
-	// if err != nil {
-	// 	log.Printf("There is been an error retrieving members from the database." + err.Error())
-	// 	return nil, err
-	// }
-
-	user := &user.User{}
-
-	if err := row.Scan(user); err != nil {
-		log.Printf("There's been an error scanning the member from the row." + err.Error())
-		return nil, err
-	}
-
-	return user, nil
-}
-
-func DeleteMemberByID(id int) (string, error) {
+func DeleteMemberByIdentifier(identifier string) (string, error) {
 
 	var dBHandler DBHandler
 
@@ -172,13 +201,20 @@ func DeleteMemberByID(id int) (string, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	db := dbHandler.DB
-	defer db.Close()
+	defer dbHandler.DB.Close()
 
-	res, err := db.Exec(`DELETE FROM members WHERE id = ?`, id)
+	var res sql.Result
+
+	if isNumeric(identifier) {
+
+		res, err = dbHandler.DB.Exec(`DELETE FROM members WHERE id = ?`, identifier)
+	} else {
+		res, err = dbHandler.DB.Exec(`DELETE FROM members WHERE username = ?`, identifier)
+
+	}
 
 	if err != nil {
-		log.Printf("There's been an error deleting the member with id %v in the DB."+err.Error(), id)
+		log.Printf("There's been an error deleting the member with id %v in the DB."+err.Error(), identifier)
 		return "error deleting member", err
 	}
 
@@ -192,7 +228,7 @@ func DeleteMemberByID(id int) (string, error) {
 
 }
 
-func DeleteMemberByName(name string) (string, error) {
+func UpdateMemberByIdentifier(u user.User, identifier string) (string, error) {
 	var dBHandler DBHandler
 
 	dbHandler, err := dBHandler.OpenConnection(DBName)
@@ -206,85 +242,24 @@ func DeleteMemberByName(name string) (string, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	db := dbHandler.DB
-	defer db.Close()
+	defer dbHandler.DB.Close()
 
-	res, err := db.Exec(`DELETE FROM members WHERE username = ?`, name)
+	var res sql.Result
 
-	if err != nil {
-		log.Printf("There's been an error deleting the member with id %v in the DB."+err.Error(), name)
-		return "error deleting member", err
-	}
-
-	lastId, err := res.LastInsertId()
-	if err != nil {
-		log.Printf("There's been an error retrieving result ID." + err.Error())
-		return "error retrieving data", err
-	}
-
-	return strconv.FormatInt(lastId, 10), nil
-
-}
-
-func UpdateMemberByID(u user.User, id int) (string, error) {
-	var dBHandler DBHandler
-
-	dbHandler, err := dBHandler.OpenConnection(DBName)
-	if err != nil {
-		log.Printf("There's been an error creating the DB handler..." + err.Error())
-		return "all not G bro", err
-	}
-
-	mu := &dBHandler.MU
-
-	mu.Lock()
-	defer mu.Unlock()
-
-	db := dbHandler.DB
-	defer db.Close()
-
-	res, err := db.Exec(`UPDATE members SET guild = ?, id = ?, username = ?, nickname = ?, avatarurl = ?, 
+	if isNumeric(identifier) {
+		res, err = dbHandler.DB.Exec(`UPDATE members SET guild = ?, id = ?, username = ?, nickname = ?, avatarurl = ?, 
 		displayavatarurl = ?, bannerurl = ?, displaybannerurl = ?, usercolor, 
 		joinedat = ?, userstatus = ?, msgcount = ? WHERE id = ?)`,
-		u.Guild, u.ID, u.User, u.Nick, u.Avatar, u.DisplayBanner, u.Banner,
-		u.DisplayBanner, u.User_color, u.JoinedAt, u.Status, u.MsgCount, id)
-
-	if err != nil {
-		log.Printf("There's been an error updating the member %v in the DB."+err.Error(), u)
-		return "error inserting member", err
-	}
-
-	lastId, err := res.LastInsertId()
-	if err != nil {
-		log.Printf("There's been an error retrieving result ID." + err.Error())
-		return "error retrieving data", err
-	}
-
-	return strconv.FormatInt(lastId, 10), nil
-}
-
-func UpdateMemberByName(u user.User, name string) (string, error) {
-	var dBHandler DBHandler
-
-	dbHandler, err := dBHandler.OpenConnection(DBName)
-	if err != nil {
-		log.Printf("There's been an error creating the DB handler..." + err.Error())
-		return "all not G bro", err
-	}
-
-	mu := &dBHandler.MU
-
-	mu.Lock()
-	defer mu.Unlock()
-
-	db := dbHandler.DB
-	defer db.Close()
-
-	res, err := db.Exec(`UPDATE members SET guild = ?, id = ?, username = ?, nickname = ?, avatarurl = ?, 
+			u.Guild, u.ID, u.Username, u.Nick, u.Avatar, u.DisplayBanner, u.Banner,
+			u.DisplayBanner, u.User_color, u.JoinedAt, u.Status, u.MsgCount, identifier)
+	} else {
+		res, err = dbHandler.DB.Exec(`UPDATE members SET guild = ?, id = ?, username = ?, nickname = ?, avatarurl = ?, 
 		displayavatarurl = ?, bannerurl = ?, displaybannerurl = ?, usercolor, 
 		joinedat = ?, userstatus = ?, msgcount = ? WHERE username = ?)`,
-		u.Guild, u.ID, u.User, u.Nick, u.Avatar, u.DisplayBanner, u.Banner,
-		u.DisplayBanner, u.User_color, u.JoinedAt, u.Status, u.MsgCount, name)
+			u.Guild, u.ID, u.Username, u.Nick, u.Avatar, u.DisplayBanner, u.Banner,
+			u.DisplayBanner, u.User_color, u.JoinedAt, u.Status, u.MsgCount, identifier)
+
+	}
 
 	if err != nil {
 		log.Printf("There's been an error updating the member %v in the DB."+err.Error(), u)

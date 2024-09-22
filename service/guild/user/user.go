@@ -1,20 +1,20 @@
 package user
 
 type User struct {
-	Guild         string   `json:"string"`
-	ID            int      `json:"id"`
-	User          string   `json:"user"`
-	Nick          string   `json:"nick"`
-	Avatar        string   `json:"avatar"`
-	DisplayAvatar string   `json:"display_avatar"`
-	Banner        string   `json:"banner"`
-	DisplayBanner string   `json:"display_banner"`
-	User_color    string   `json:"user_color"`
-	JoinedAt      string   `json:"joined_at"`
-	Status        string   `json:"status"`
-	Roles         []Role   `json:"roles"`
-	Messages      []string `json:"messages"`
-	MsgCount      int      `json:"msg_count"`
+	Guild         string   `json:"userguild"`
+	ID            int      `json:"userid"`
+	Username      string   `json:"username"`
+	Nick          string   `json:"nickname"`
+	Avatar        string   `json:"avatarurl"`
+	DisplayAvatar string   `json:"displayavatarurl"`
+	Banner        string   `json:"bannerurl"`
+	DisplayBanner string   `json:"displaybannerurl"`
+	User_color    string   `json:"usercolor"`
+	JoinedAt      string   `json:"joinedat"`
+	Status        string   `json:"userstatus"`
+	Roles         []Role   `json:"userroles"`
+	Messages      []string `json:"usermessages"`
+	MsgCount      int      `json:"messagecount"`
 }
 
 type Role struct {

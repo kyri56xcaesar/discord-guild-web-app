@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -65,7 +66,11 @@ func main() {
 
 	// Subrouter for /guild
 	guildRouter := r.PathPrefix("/guild").Subrouter()
-	guildRouter.HandleFunc("/{type}", userHandler).Methods("GET", "POST")
+	guildRouter.HandleFunc("/{type}", membersHandler).Methods("GET", "POST")
+
+	membersRouter := guildRouter.PathPrefix("/member").Subrouter()
+	membersRouter.HandleFunc("/", rootmemberHandler).Methods("GET", "POST")
+	membersRouter.HandleFunc("/{identifier}", memberHandler).Methods("GET", "UPDATE", "DELETE")
 
 	// Enable CORS for all routes
 	corsObj := handlers.AllowedOrigins([]string{"*"}) // Allow all origins
@@ -79,10 +84,10 @@ func main() {
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	json.NewEncoder(w).Encode([]byte("OK"))
 }
 
-func userHandler(w http.ResponseWriter, r *http.Request) {
+func membersHandler(w http.ResponseWriter, r *http.Request) {
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -94,17 +99,24 @@ func userHandler(w http.ResponseWriter, r *http.Request) {
 	case "members":
 		if r.Method == "GET" {
 
+			var wg sync.WaitGroup
+			wg.Add(1)
+
 			go func() {
+				defer wg.Done()
+
 				res, err := servicedb.GetAllMembers()
 				if err != nil {
 					log.Printf("There's been an error brother...")
 				}
 
-				log.Printf("The result of this thing is: %v\n", res)
+				// log.Printf("\nThe result of this thing is: %+v\n", res)
+
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(res)
 			}()
 
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(members)
+			wg.Wait()
 
 		} else if r.Method == "POST" {
 
@@ -123,21 +135,28 @@ func userHandler(w http.ResponseWriter, r *http.Request) {
 				// fmt.Printf("The member is now: %+v\n", newMembers[i])
 			}
 
-			fmt.Print(newMembers[0])
+			var wg sync.WaitGroup
+			wg.Add(1)
 
 			go func() {
-				res, err := servicedb.InsertMember(newMembers[0])
+				defer wg.Done()
+
+				_, err := servicedb.InsertMultipleMembers(newMembers)
 				if err != nil {
 					log.Printf("There's been an error brother...")
 				}
 
-				log.Printf("The result of this thing is: %v\n", res)
+				// log.Printf("\nThe result of this thing is: %+v\n", res)
+
+				w.WriteHeader(http.StatusCreated)
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(newMembers)
 			}()
 
-			w.WriteHeader(http.StatusCreated)
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(newMembers)
+			wg.Wait()
+
 		}
+
 	case "bots":
 		if r.Method == "GET" {
 			w.Header().Set("Content-Type", "application/json")
@@ -165,4 +184,153 @@ func userHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+}
+
+func memberHandler(w http.ResponseWriter, r *http.Request) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	vars := mux.Vars(r)
+	identifier := vars["identifier"]
+
+	if !isAlphanumeric(identifier) {
+		log.Print("Invalid identifier input...")
+		json.NewEncoder(w).Encode("Not Allowed.")
+
+		return
+	}
+
+	if r.Method == "GET" {
+		// Call ID
+		var wg sync.WaitGroup
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			res, err := servicedb.GetMemberByIdentifier(identifier)
+			if err != nil {
+				log.Printf("There's been an error brother...")
+			}
+
+			// log.Printf("\nThe result of this thing is: %+v\n", res)
+
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(res)
+		}()
+
+		wg.Wait()
+	} else if r.Method == "UPDATE" {
+
+		var updatedMember user.User
+		err := json.NewDecoder(r.Body).Decode(&updatedMember)
+		if err != nil {
+			log.Printf("Error decoding JSON: %v", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		var wg sync.WaitGroup
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			_, err := servicedb.UpdateMemberByIdentifier(updatedMember, identifier)
+			if err != nil {
+				log.Printf("There's been an error brother...")
+			}
+
+			// log.Printf("\nThe result of this thing is: %+v\n", res)
+
+			w.WriteHeader(http.StatusCreated)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(updatedMember)
+		}()
+
+		wg.Wait()
+
+	} else if r.Method == "DELETE" {
+
+		var wg sync.WaitGroup
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			res, err := servicedb.DeleteMemberByIdentifier(identifier)
+			if err != nil {
+				log.Printf("There's been an error brother...")
+			}
+
+			// log.Printf("\nThe result of this thing is: %+v\n", res)
+
+			w.WriteHeader(http.StatusCreated)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(res)
+		}()
+
+		wg.Wait()
+
+	}
+
+}
+
+func rootmemberHandler(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == "GET" {
+		var wg sync.WaitGroup
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			res, err := servicedb.GetAllMembers()
+			if err != nil {
+				log.Printf("There's been an error brother...")
+			}
+
+			// log.Printf("\nThe result of this thing is: %+v\n", res)
+
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(res)
+		}()
+
+		wg.Wait()
+
+	} else if r.Method == "POST" {
+
+		var newMember user.User
+		err := json.NewDecoder(r.Body).Decode(&newMember)
+		if err != nil {
+			log.Printf("Error decoding JSON: %v", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		var wg sync.WaitGroup
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			_, err := servicedb.InsertMember(newMember)
+			if err != nil {
+				log.Printf("There's been an error brother...")
+			}
+
+			// log.Printf("\nThe result of this thing is: %+v\n", res)
+
+			w.WriteHeader(http.StatusCreated)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(newMember)
+		}()
+
+		wg.Wait()
+	}
+}
+
+func isAlphanumeric(s string) bool {
+	re := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
+	return re.MatchString(s)
 }
