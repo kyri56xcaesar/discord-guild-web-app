@@ -99,24 +99,13 @@ func membersHandler(w http.ResponseWriter, r *http.Request) {
 	case "members":
 		if r.Method == "GET" {
 
-			var wg sync.WaitGroup
-			wg.Add(1)
-
-			go func() {
-				defer wg.Done()
-
-				res, err := servicedb.GetAllMembers()
-				if err != nil {
-					log.Printf("There's been an error brother...")
-				}
-
-				// log.Printf("\nThe result of this thing is: %+v\n", res)
-
-				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(res)
-			}()
-
-			wg.Wait()
+			res, err := servicedb.GetAllMembers()
+			if err != nil {
+				log.Printf("There's been an error brother...")
+			}
+			// log.Printf("\nThe result of this thing is: %+v\n", res)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(res)
 
 		} else if r.Method == "POST" {
 
@@ -135,25 +124,14 @@ func membersHandler(w http.ResponseWriter, r *http.Request) {
 				// fmt.Printf("The member is now: %+v\n", newMembers[i])
 			}
 
-			var wg sync.WaitGroup
-			wg.Add(1)
-
-			go func() {
-				defer wg.Done()
-
-				_, err := servicedb.InsertMultipleMembers(newMembers)
-				if err != nil {
-					log.Printf("There's been an error brother...")
-				}
-
-				// log.Printf("\nThe result of this thing is: %+v\n", res)
-
-				w.WriteHeader(http.StatusCreated)
-				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(newMembers)
-			}()
-
-			wg.Wait()
+			_, err = servicedb.InsertMultipleMembers(newMembers)
+			if err != nil {
+				log.Printf("There's been an error brother...")
+			}
+			// log.Printf("\nThe result of this thing is: %+v\n", res)
+			w.WriteHeader(http.StatusCreated)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(newMembers)
 
 		}
 
@@ -202,24 +180,17 @@ func memberHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
 		// Call ID
-		var wg sync.WaitGroup
-		wg.Add(1)
 
-		go func() {
-			defer wg.Done()
+		res, err := servicedb.GetMemberByIdentifier(identifier)
+		if err != nil {
+			log.Printf("There's been an error brother...")
+		}
 
-			res, err := servicedb.GetMemberByIdentifier(identifier)
-			if err != nil {
-				log.Printf("There's been an error brother...")
-			}
+		// log.Printf("\nThe result of this thing is: %+v\n", res)
 
-			// log.Printf("\nThe result of this thing is: %+v\n", res)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(res)
 
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(res)
-		}()
-
-		wg.Wait()
 	} else if r.Method == "UPDATE" {
 
 		var updatedMember user.User
@@ -230,47 +201,28 @@ func memberHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var wg sync.WaitGroup
-		wg.Add(1)
+		_, err = servicedb.UpdateMemberByIdentifier(updatedMember, identifier)
+		if err != nil {
+			log.Printf("There's been an error brother...")
+		}
+		// log.Printf("\nThe result of this thing is: %+v\n", res)
 
-		go func() {
-			defer wg.Done()
-
-			_, err := servicedb.UpdateMemberByIdentifier(updatedMember, identifier)
-			if err != nil {
-				log.Printf("There's been an error brother...")
-			}
-
-			// log.Printf("\nThe result of this thing is: %+v\n", res)
-
-			w.WriteHeader(http.StatusCreated)
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(updatedMember)
-		}()
-
-		wg.Wait()
+		w.WriteHeader(http.StatusCreated)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(updatedMember)
 
 	} else if r.Method == "DELETE" {
 
-		var wg sync.WaitGroup
-		wg.Add(1)
+		res, err := servicedb.DeleteMemberByIdentifier(identifier)
+		if err != nil {
+			log.Printf("There's been an error brother...")
+		}
 
-		go func() {
-			defer wg.Done()
+		// log.Printf("\nThe result of this thing is: %+v\n", res)
 
-			res, err := servicedb.DeleteMemberByIdentifier(identifier)
-			if err != nil {
-				log.Printf("There's been an error brother...")
-			}
-
-			// log.Printf("\nThe result of this thing is: %+v\n", res)
-
-			w.WriteHeader(http.StatusCreated)
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(res)
-		}()
-
-		wg.Wait()
+		w.WriteHeader(http.StatusCreated)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(res)
 
 	}
 
@@ -279,24 +231,16 @@ func memberHandler(w http.ResponseWriter, r *http.Request) {
 func rootmemberHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
-		var wg sync.WaitGroup
-		wg.Add(1)
 
-		go func() {
-			defer wg.Done()
+		res, err := servicedb.GetAllMembers()
+		if err != nil {
+			log.Printf("There's been an error brother...")
+		}
 
-			res, err := servicedb.GetAllMembers()
-			if err != nil {
-				log.Printf("There's been an error brother...")
-			}
+		// log.Printf("\nThe result of this thing is: %+v\n", res)
 
-			// log.Printf("\nThe result of this thing is: %+v\n", res)
-
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(res)
-		}()
-
-		wg.Wait()
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(res)
 
 	} else if r.Method == "POST" {
 
@@ -308,25 +252,17 @@ func rootmemberHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var wg sync.WaitGroup
-		wg.Add(1)
+		_, err = servicedb.InsertMember(newMember)
+		if err != nil {
+			log.Printf("There's been an error brother...")
+		}
 
-		go func() {
-			defer wg.Done()
+		// log.Printf("\nThe result of this thing is: %+v\n", res)
 
-			_, err := servicedb.InsertMember(newMember)
-			if err != nil {
-				log.Printf("There's been an error brother...")
-			}
+		w.WriteHeader(http.StatusCreated)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(newMember)
 
-			// log.Printf("\nThe result of this thing is: %+v\n", res)
-
-			w.WriteHeader(http.StatusCreated)
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(newMember)
-		}()
-
-		wg.Wait()
 	}
 }
 
