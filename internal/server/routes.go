@@ -14,15 +14,16 @@ import (
 )
 
 var mu sync.Mutex
-var members []models.Member
-var bots []models.Bot
+
+// var members []models.Member // Not needed for now.. perhaps configure some memory operation-caching work
+// var bots []models.Bot // Not needed for now.. perhaps configure some memory operation-caching work
 
 func RootHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode([]byte("OK"))
+	json.NewEncoder(w).Encode("{'OK'}")
 }
 
-func MembersHandler(w http.ResponseWriter, r *http.Request) {
+func UsersHandler(w http.ResponseWriter, r *http.Request) {
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -52,8 +53,6 @@ func MembersHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			members = append(members, newMembers...)
-
 			_, err = database.InsertMultipleMembers(newMembers)
 			if err != nil {
 				log.Printf("There's been an error brother...")
@@ -68,7 +67,7 @@ func MembersHandler(w http.ResponseWriter, r *http.Request) {
 	case "bots":
 		if r.Method == "GET" {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(bots)
+			json.NewEncoder(w).Encode("{'BOBOBO'}")
 		} else if r.Method == "POST" {
 
 			var newBots []models.Bot
@@ -189,6 +188,18 @@ func RootMemberHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(newMember)
 
 	}
+}
+
+func GuildHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("{'Guild'}"))
+}
+
+func RootBotHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("{'Bots'}"))
+}
+
+func BotHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("{'Bot'}"))
 }
 
 func IsAlphanumeric(s string) bool {

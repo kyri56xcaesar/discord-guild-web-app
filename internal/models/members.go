@@ -21,8 +21,3 @@ type Role struct {
 	Role_name string `json:"role_name"`
 	Color     string `json:"role_color"`
 }
-
-type Bot struct {
-	Member
-	IsBot bool `json:"bot"`
-}

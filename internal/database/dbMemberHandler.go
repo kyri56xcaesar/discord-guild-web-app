@@ -50,6 +50,7 @@ func InitDB(dbpath string) error {
 	err := dBHandler.openConnection()
 	if err != nil {
 		log.Print("Error initializing database connection..., will continue in mem: " + err.Error())
+		return err
 	}
 
 	defer dBHandler.DB.Close()
@@ -63,7 +64,7 @@ func InitDB(dbpath string) error {
 		dBHandler.RunSQLscript(string(fileContent))
 	}
 
-	return err
+	return nil
 
 }
 

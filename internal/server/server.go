@@ -30,14 +30,20 @@ func NewServer(conf string) *Server {
 func (s *Server) routes() {
 	// Root handler for health check
 	s.Router.HandleFunc("/", RootHandler)
+	s.Router.HandleFunc("/guild", GuildHandler)
 
 	// Subrouter for /guild
 	guildRouter := s.Router.PathPrefix("/guild").Subrouter()
-	guildRouter.HandleFunc("/{type}", MembersHandler).Methods("GET", "POST")
+	guildRouter.HandleFunc("/", GuildHandler).Methods("GET", "POST")
+	guildRouter.HandleFunc("/{type}", UsersHandler).Methods("GET", "POST")
 
 	membersRouter := guildRouter.PathPrefix("/member").Subrouter()
 	membersRouter.HandleFunc("/", RootMemberHandler).Methods("GET", "POST")
 	membersRouter.HandleFunc("/{identifier}", MemberHandler).Methods("GET", "UPDATE", "DELETE")
+
+	botsRouter := guildRouter.PathPrefix("/bot").Subrouter()
+	botsRouter.HandleFunc("/", RootBotHandler).Methods("GET", "POST")
+	botsRouter.HandleFunc("/{identifier}", BotHandler).Methods("GET", "UPDATE", "POST", "DELETE")
 
 }
 
