@@ -6,5 +6,7 @@
 *.db
 *.vscode
 *.exe
+*.json
+data
 pycache
 vendor
