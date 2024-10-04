@@ -1,7 +1,10 @@
 *.mp3
 *.pyc
-*.env
+[^template]*.env
 *.log
 *.pem
 *.db
 *.vscode
+*.exe
+pycache
+vendor
