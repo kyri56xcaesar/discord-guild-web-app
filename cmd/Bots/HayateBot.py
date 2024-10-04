@@ -1,12 +1,12 @@
-import logging
 import discord
-from discord.ext import commands,tasks
-from dotenv import dotenv_values
 import youtube_dl
 import asyncio
 
+from discord.ext import commands
+from dotenv import dotenv_values
+
 # Setup env
-config = dotenv_values(".env")
+config = dotenv_values("../../bots.env")
 
 TOKEN = config["hayate_bot_token"]
 

@@ -1,19 +1,15 @@
 import discord
 import random
-from dotenv import dotenv_values
-import os, sys
-
-parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-sys.path.append(parent_directory)
-
 import bot_utils as ut
 
-config = dotenv_values(".env")
+from dotenv import dotenv_values
+
+
+config = dotenv_values("../../bots.env")
 
 token = config["vassano_bot_token"]
 userID = config["vassano_user_id"]
 general_ch_id = config["general_ch_id"]
-bot_testing_ch_id = config["bot_testing_ch_id"]
 
 
 print(f"token: {token}, userID: {userID}, general_channel: {general_ch_id}")
@@ -136,4 +132,4 @@ async def on_message(msg):
 client.run(token)
 
 
-ut.save_data("Vassano", tracker)
+ut.save_data("data/Vassano", tracker)

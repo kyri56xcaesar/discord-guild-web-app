@@ -2,16 +2,13 @@ import discord
 import random
 import requests
 import json
-from dotenv import dotenv_values
-import os, sys
-
-parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-sys.path.append(parent_directory)
-
 import bot_utils as ut
 
+from dotenv import dotenv_values
 
-config = dotenv_values(".env")
+
+
+config = dotenv_values("../../bots.env")
 responding = True
 token = config["stouf_bot_token"]
 id = config["stouf_user_id"]
@@ -155,4 +152,4 @@ async def on_message(message):
         await message.channel.send(HELP())
 
 client.run(token)
-ut.save_data("Stouf", tracker)
+ut.save_data("data/Stouf", tracker)

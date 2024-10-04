@@ -1,13 +1,13 @@
 import discord
 import random
 import asyncio
-from discord.ext import commands
 
+from discord.ext import commands
 from elevenlabs import save
 from elevenlabs.client import AsyncElevenLabs
 from dotenv import dotenv_values
 
-config = dotenv_values(".env")
+config = dotenv_values("../../bots.env")
 
 token = config["sak_bot_token"]
 elevenlabs_token = config["elevenlabs_token"]

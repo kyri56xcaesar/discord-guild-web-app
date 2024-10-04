@@ -1,11 +1,12 @@
 import discord
+
 from datetime import datetime, timedelta
 from dotenv import dotenv_values
 
 client = discord.Client(intents=discord.Intents.default())
 
 
-config = dotenv_values(".env")
+config = dotenv_values("../../bots.env")
 
 token = config["stratigos_bot_token"]
 vip_list = config["vip_list_user_ids"].split(",")

@@ -1,16 +1,10 @@
 import discord
-import os
 import requests
 import json
 import random
-from dotenv import dotenv_values
-import random
-import os, sys
-
-parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-sys.path.append(parent_directory)
-
 import bot_utils as ut
+
+from dotenv import dotenv_values
 
 
 
@@ -19,7 +13,7 @@ intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 
 
-config = dotenv_values(".env")
+config = dotenv_values("../../bots.env")
 
 token = config["koke_bot_token"]
 id = config["koke_user_id"]
@@ -159,4 +153,4 @@ async def on_message(message):
 
 client.run(token)
 
-ut.save_data("Koke", tracker)
+ut.save_data("data/Koke", tracker)

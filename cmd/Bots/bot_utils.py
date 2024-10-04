@@ -1,9 +1,5 @@
 import datetime
-import sys
-sys.path.append("../Bots/")
 
-# Import the module from the parent directory
-import bot_utils as bu
 
 def encrypt(name):
     ciph = ""
@@ -14,7 +10,7 @@ def encrypt(name):
 
 
 def save_data(name, contents):
-    with open(f"{encrypt(name)}.log", "a") as f:
+    with open(f"{encrypt(name)}.log", "a+") as f:
         # header
         f.write(f"{datetime.datetime.today()}  ::_-> lines: {len(contents)}  \n")
         for index, line in enumerate(contents):

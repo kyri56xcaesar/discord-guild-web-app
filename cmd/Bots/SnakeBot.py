@@ -1,11 +1,12 @@
 import discord
 import json
 import requests
+
 from dotenv import dotenv_values
 from datetime import datetime, timedelta
 
 
-config = dotenv_values("../.env")
+config = dotenv_values("../../bots.env")
 
 
 intents = discord.Intents.default()
@@ -136,7 +137,7 @@ if __name__ == "__main__":
     #app.run(host='0.0.0.0', port=PORT, debug=True)
     
 
-    token = config['DISCORD_TOKEN']
+    token = config['snake_bot_token']
     # print(f'TOKEN: {token}')
     client.run(token)
 
