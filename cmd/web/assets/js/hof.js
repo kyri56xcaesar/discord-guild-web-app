@@ -2,6 +2,7 @@ var guild_name = '$DADS';
 IP = 'localhost';
 // IP = '85.75.213.54'
 PORT = '6969'
+const default_icon = "assets/icons/mozart_draw.jpg";
 
 
 // Utility functions
@@ -13,6 +14,13 @@ function formatDate(dateString) {
 }
 
 function hexToRGBA(hex_string, alpha = 1) {
+
+    isHexColor = hex => typeof hex === 'string' && hex.length === 6 && !isNaN(Number('0x' + hex))
+
+    if (!isHexColor(hex_string)) {
+        return hex_string;
+    }
+
     hex_string = hex_string.replace(/^#/, '');
 
     if (hex_string.length === 3) {
@@ -42,7 +50,7 @@ async function fetchMembers() {
         data = response.data;
         guild_name = data[0].guild;
         data.sort(function(first, second) {
-            return second.msg_count - first.msg_count
+            return second.messagecount - first.messagecount
         })
 
         console.log(data);
@@ -99,34 +107,33 @@ function displayMembers(data) {
         li.setAttribute('id', `hof-entry-${index + 1}`);
         li.setAttribute('class', 'hof-entry')
 
-        li.style=`background-color: ${hexToRGBA(member.user_color, 0.08)}; background: url(${member.banner})`
+        li.style=`background-color: ${hexToRGBA(member.usercolor, 0.08)}; background: url(${member.bannerurl})`
 
         // console.log('avatar: ' + member.avatar + 'banner: ' + member.banner);
 
         if (index != 0 && index != 1 && index != 2) li.style.borderBottom = '1px solid #ccc';
 
-        const default_icon = "assets/mozart_draw.jpg";
 
         li.innerHTML = `
             <div class="hof-entry-left">
                 <h1>${index + 1}.</h1>
-                <img class="border-color-${member.status}"src="${member.avatar === 'None' ? default_icon : member.avatar}" alt="${default_icon}" />
-                <h3>${member.user} <br>(${member.nick || 'No Nick'})</h3>
+                <img class="border-color-${member.userstatus}"src="${member.avatarurl === 'None' ? default_icon : member.avatarurl}" alt="${default_icon}" />
+                <h3>${member.username} <br>(${member.nickname || 'No Nick'})</h3>
             </div>
 
             <div style="border-left:1px solid #000;height:250px"></div>
             
             <div class="hof-entry-right">
-                <p><strong>Message Count:</strong> <span class="msg-count">${member.msg_count}</span></p>
+                <p><strong>Message Count:</strong> <span class="msg-count">${member.messagecount}</span></p>
                 
                 <strong>Roles:</strong>
                 <p class="roles-display" id="roles-display"></p>
                 
-                <p><strong>Joined At:</strong> ${formatDate(member.joined_at)}</p>
+                <p><strong>Joined At:</strong> ${formatDate(member.joinedat)}</p>
                 
                 <p>
-                    <strong>Status:</strong> ${member.status}
-                    <span class="status-light ${member.status}"></span>
+                    <strong>Status:</strong> ${member.userstatus}
+                    <span class="status-light ${member.userstatus}"></span>
                 </p>
             </div>
             <hr>
@@ -135,15 +142,17 @@ function displayMembers(data) {
         
         let rolesDisplay = li.querySelector('.roles-display');
 
-        let rolesHtml = member.roles.map(role => {
-            return `<span class="roles-full" style="color: ${role.role_color};">${role.role_name}</span>`;
-        }).join(", ");
-  
-        rolesDisplay.innerHTML = rolesHtml;
- 
-        
+        if (member.userroles) {
+            let rolesHtml = member.userroles.map(role => {
+                return `<span class="roles-full" style="color: ${role.role_color};">${role.role_name}</span>`;
+            }).join(", ");
+            
+            rolesDisplay.innerHTML = rolesHtml;
+            
+        }
+                
 
-    })
+    });
 
     
 }

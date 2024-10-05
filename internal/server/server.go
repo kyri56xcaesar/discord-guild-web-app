@@ -28,14 +28,17 @@ func NewServer(conf string) *Server {
 }
 
 func (s *Server) routes() {
+
+	s.Router.StrictSlash(true)
+
 	// Root handler for health check
 	s.Router.HandleFunc("/", RootHandler)
-	s.Router.HandleFunc("/guild", GuildHandler)
 
 	// Subrouter for /guild
 	guildRouter := s.Router.PathPrefix("/guild").Subrouter()
 	guildRouter.HandleFunc("/", GuildHandler).Methods("GET", "POST")
-	guildRouter.HandleFunc("/{type}", UsersHandler).Methods("GET", "POST")
+	guildRouter.HandleFunc("/members", MembersHandler).Methods("GET", "POST")
+	guildRouter.HandleFunc("/bots", BotsHandler).Methods("GET", "POST")
 
 	membersRouter := guildRouter.PathPrefix("/member").Subrouter()
 	membersRouter.HandleFunc("/", RootMemberHandler).Methods("GET", "POST")
@@ -57,7 +60,7 @@ func (s *Server) Start() {
 		log.Fatalf("Required environment variables are missing: %+ v", err)
 	}
 
-	if err = database.InitDB(config.DBfile); err != nil {
+	if err = database.InitDB(config.DBfile, database.InitSQLScriptPath); err != nil {
 		log.Fatalf("Error during db initialization: %v", err)
 	}
 

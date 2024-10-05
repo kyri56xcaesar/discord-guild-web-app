@@ -45,8 +45,8 @@ async def on_ready():
     
     # perhaps make it multithreaded
     data = await gatherData(verbose=False, monthOffset=6)
-    with open('test.json', 'w', encoding='utf-8') as f:
-        json.dump(fp=f, obj=data, ensure_ascii=False)
+    #with open('test.json', 'w', encoding='utf-8') as f:
+    #    json.dump(fp=f, obj=data, ensure_ascii=False)
     # multithreaded as well
     
     response = await forwardData(data['$Dads'], URL)
@@ -84,18 +84,18 @@ async def gatherData(verbose=True, monthOffset=-1):
             if ROLE_INDEX in [role.name for role in member.roles]:
             
                 m_data = {
-                    'guild':guild.name,
-                    'user':member.name,
-                    'nick': member.nick if member.nick is not None else 'None',
-                    'avatar':str(member.avatar),
-                    'display_avatar':str(member.display_avatar),
-                    'banner':member.banner.url if member.banner is not None else 'None',
-                    'user_color':str(int_to_hex_color(member.color.value)).upper(),
-                    'joined_at':member.joined_at.isoformat(),
-                    'status':member.raw_status,
-                    'roles':[{'role_name': role.name, 'role_color':str(int_to_hex_color(role.color.value).upper())} for role in member.roles],
-                    'messages':list(),
-                    'msg_count':0
+                    'userguild':guild.name,
+                    'username':member.name,
+                    'nickname': member.nick if member.nick is not None else 'None',
+                    'avatarurl':str(member.avatar),
+                    'displayavatarurl':str(member.display_avatar),
+                    'bannerurl':member.banner.url if member.banner is not None else 'None',
+                    'usercolor':str(int_to_hex_color(member.color.value)).upper(),
+                    'joinedat':member.joined_at.isoformat(),
+                    'userstatus':member.raw_status,
+                    'userroles':[{'role_name': role.name, 'role_color':str(int_to_hex_color(role.color.value).upper())} for role in member.roles],
+                    'usermessages':list(),
+                    'messagecount':0
                 }
                 member_data.append(m_data)
                 
@@ -104,14 +104,14 @@ async def gatherData(verbose=True, monthOffset=-1):
                 
                 bot_data = {
                     'bot':True,
-                    'guild':guild.name,
-                    'user':member.name,
-                    'avatar':str(member.avatar),
-                    'joined_at':member.joined_at.isoformat(),
-                    'status':member.raw_status,
-                    'roles':[{'role_name': role.name, 'role_color':str(int_to_hex_color(role.color.value).upper())} for role in member.roles],
-                    'messages':list(),
-                    'msg_count':0
+                    'userguild':guild.name,
+                    'username':member.name,
+                    'avatarurl':str(member.avatar),
+                    'joinedat':member.joined_at.isoformat(),
+                    'userstatus':member.raw_status,
+                    'userroles':[{'role_name': role.name, 'role_color':str(int_to_hex_color(role.color.value).upper())} for role in member.roles],
+                    'usermessages':list(),
+                    'messagecount':0
                 }
                 member_data.append(bot_data)
 
@@ -122,10 +122,10 @@ async def gatherData(verbose=True, monthOffset=-1):
             async for message in channel.history(before=before, after=after, limit=None):
                 # print(f'Member: {member.name} -> {channel} -> message: {message.created_at}\t{message.content}')
                 for item in data[guild.name]:
-                    if item['user'] == message.author.name:
+                    if item['username'] == message.author.name:
                     # Increment the 'messages' count by 1
-                        item['msg_count'] += 1
-                        item['messages'].append(f'{message.clean_content}, {message.created_at}')
+                        item['messagecount'] += 1
+                        item['usermessages'].append(f'{message.clean_content}, {message.created_at}')
                         break  # Stop after finding the correct user
 
         
