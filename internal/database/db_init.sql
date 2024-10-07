@@ -3,13 +3,14 @@ CREATE TABLE IF NOT EXISTS roles
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			name TEXT UNIQUE
 		);
+		
 CREATE TABLE IF NOT EXISTS member_roles 
 (
-	member_id INTEGER,
-	role_id INTEGER,
-	PRIMARY KEY (member_id, role_id),
-	FOREIGN KEY (member_id) REFERENCES members (id),
-	FOREIGN KEY (role_id) REFERENCES roles (id)
+	memberid INTEGER,
+	roleid INTEGER,
+	PRIMARY KEY (memberid, roleid),
+	FOREIGN KEY (memberid) REFERENCES members (id),
+	FOREIGN KEY (roleid) REFERENCES roles (id)
 );
 CREATE TABLE IF NOT EXISTS members 
 (
@@ -41,28 +42,13 @@ CREATE TABLE IF NOT EXISTS bots (
 
 );
 
-CREATE TABLE IF NOT EXISTS trigger_words (
-    trigger_id integer primary key AUTOINCREMENT,
-    bot_id integer foreign key REFERENCES bots (botid),
-    phrase varchar(255),
-    author char(20),
-    data_datetime DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS typical_lines (
-    line_id integer primary key AUTOINCREMENT,
-    bot_id integer foreign key REFERENCES bots (botid) ,
-    phrase varchar(255),
-    author char(20),
-	to_member varchar(255),
-    data_datetime DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS sad_lines (
-    line_id integer primary key AUTOINCREMENT,
-    bot_id integer foreign key references bots (botid),
-    phrase varchar(255),
-    author char(20),
-	to_id varchar(255),
-    data_datetime DATETIME DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS lines (
+	lineid integer primary key AUTOINCREMENT,
+	bid integer,
+	phrase text,
+	author varchar(255),
+	toid varchar(255),
+	ltype varchar(255),
+	createdat DATETIME DEFAULT CURRENT_TIMESTAMP,
+	foreign key (bid) references bots (botid)
 );

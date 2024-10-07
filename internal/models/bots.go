@@ -1,25 +1,46 @@
 package models
 
 type Bot struct {
-	Guild     string    `json:"botguild"`
-	ID        int       `json:"botid"`
-	Name      string    `json:"botname"`
-	Avatar    string    `json:"avatarurl"`
-	Banner    string    `json:"bannerurl"`
-	CreatedAt string    `json:"createdat"`
-	Author    string    `json:"author"`
-	Status    string    `json:"botstatus"`
-	IsSinger  bool      `json:"isSinger"`
-	Triggers  []Trigger `json:"triggerwords"`
-	Lines     []Line    `json:"linewords"`
-}
-
-type Trigger struct {
-	Trig string
+	Guild     string `json:"botguild"`
+	ID        int    `json:"botid"`
+	Name      string `json:"botname"`
+	Avatar    string `json:"avatarurl"`
+	Banner    string `json:"bannerurl"`
+	CreatedAt string `json:"createdat"`
+	Author    string `json:"author"`
+	Status    string `json:"botstatus"`
+	IsSinger  bool   `json:"isSinger"`
+	Lines     []Line `json:"linewords"`
 }
 
 type Line struct {
-	Phrase string
+	ID        int    `json:"lineid"`
+	BID       int    `json:"bid"`
+	Phrase    string `json:"phrase"`
+	Author    string `json:"author"`
+	To        string `json:"toid"`
+	LineType  string `json:"ltype"`
+	CreatedAt string `json:"createdat"`
+}
+
+func (l *Line) VerifyLine() error {
+	if !isValidUTF8String(l.Phrase) {
+		return &FieldError{Field: "Phrase", Message: "must contain letters, numbers or symbols"}
+	}
+	if !isValidUTF8String(l.Author) {
+		return &FieldError{Field: "Author", Message: "must contain letters, numbers or symbols"}
+	}
+	if !isValidUTF8String(l.To) {
+		return &FieldError{Field: "To", Message: "must contain letters, numbers or symbols"}
+	}
+	if !isValidUTF8String(l.LineType) {
+		return &FieldError{Field: "LineType", Message: "must contain letters, numbers or symbols"}
+	}
+	if !isValidUTF8String(l.CreatedAt) {
+		return &FieldError{Field: "CreatedAt", Message: "must contain letters, numbers or symbols"}
+	}
+
+	return nil
 }
 
 func (b *Bot) VerifyBot() error {
@@ -48,15 +69,9 @@ func (b *Bot) VerifyBot() error {
 	}
 
 	for _, l := range b.Lines {
-		if !isValidUTF8String(l.Phrase) {
+		if err := l.VerifyLine(); err != nil {
 			return &FieldError{Field: "Lines", Message: "must contain letters, numbers or symbols"}
 
-		}
-	}
-
-	for _, t := range b.Triggers {
-		if !isValidUTF8String(t.Trig) {
-			return &FieldError{Field: "Triggers", Message: "must contain letters, numbers or symbols"}
 		}
 	}
 

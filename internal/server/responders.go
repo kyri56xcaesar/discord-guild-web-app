@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"regexp"
 )
 
 type errResponse struct {
@@ -38,4 +39,9 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(data)
+}
+
+func IsAlphanumeric(s string) bool {
+	re := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
+	return re.MatchString(s)
 }

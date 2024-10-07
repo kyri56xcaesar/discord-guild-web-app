@@ -29,7 +29,6 @@ func (dbh *DBHandler) InsertMember(u models.Member) (string, error) {
 		log.Printf("There's been an error getting the DB handler..." + err.Error())
 		return "all not G bro", err
 	}
-
 	defer dbh.DB.Close()
 
 	res, err := dbh.DB.Exec(`INSERT INTO members (guild, username, nickname, avatarurl, displayavatarurl, bannerurl, displaybannerurl, usercolor, joinedat, userstatus, msgcount) 
@@ -257,13 +256,13 @@ func (dbh *DBHandler) UpdateMemberByIdentifier(u models.Member, identifier strin
 	if isNumeric(identifier) {
 		res, err = dbh.DB.Exec(`UPDATE members SET guild = ?, id = ?, username = ?, nickname = ?, avatarurl = ?, 
 		displayavatarurl = ?, bannerurl = ?, displaybannerurl = ?, usercolor, 
-		joinedat = ?, userstatus = ?, msgcount = ? WHERE id = ?)`,
+		joinedat = ?, userstatus = ?, msgcount = ? WHERE id = ?`,
 			u.Guild, u.ID, u.Username, u.Nick, u.Avatar, u.DisplayBanner, u.Banner,
 			u.DisplayBanner, u.User_color, u.JoinedAt, u.Status, u.MsgCount, identifier)
 	} else {
 		res, err = dbh.DB.Exec(`UPDATE members SET guild = ?, id = ?, username = ?, nickname = ?, avatarurl = ?, 
 		displayavatarurl = ?, bannerurl = ?, displaybannerurl = ?, usercolor, 
-		joinedat = ?, userstatus = ?, msgcount = ? WHERE username = ?)`,
+		joinedat = ?, userstatus = ?, msgcount = ? WHERE username = ?`,
 			u.Guild, u.ID, u.Username, u.Nick, u.Avatar, u.DisplayBanner, u.Banner,
 			u.DisplayBanner, u.User_color, u.JoinedAt, u.Status, u.MsgCount, identifier)
 

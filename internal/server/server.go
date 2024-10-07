@@ -33,6 +33,7 @@ func (s *Server) routes() {
 
 	// Root handler for health check
 	s.Router.HandleFunc("/", RootHandler)
+	s.Router.HandleFunc("/healthz", HealthCheck)
 
 	// Subrouter for /guild
 	guildRouter := s.Router.PathPrefix("/guild").Subrouter()
@@ -42,11 +43,14 @@ func (s *Server) routes() {
 
 	membersRouter := guildRouter.PathPrefix("/member").Subrouter()
 	membersRouter.HandleFunc("/", RootMemberHandler).Methods("GET", "POST")
-	membersRouter.HandleFunc("/{identifier}", MemberHandler).Methods("GET", "UPDATE", "DELETE")
+	membersRouter.HandleFunc("/{identifier}/", MemberHandler).Methods("GET", "PUT", "DELETE")
 
 	botsRouter := guildRouter.PathPrefix("/bot").Subrouter()
 	botsRouter.HandleFunc("/", RootBotHandler).Methods("GET", "POST")
-	botsRouter.HandleFunc("/{identifier}", BotHandler).Methods("GET", "UPDATE", "POST", "DELETE")
+	botsRouter.HandleFunc("/{identifier:[0-9]+}/", BotHandler).Methods("GET", "POST", "PUT", "DELETE")
+
+	botsRouter.HandleFunc("/lines", RootBotLineHandler).Methods("GET", "POST")
+	botsRouter.HandleFunc("/line/{identifier}/", BotLineHandler).Methods("GET", "PUT", "DELETE")
 
 }
 
