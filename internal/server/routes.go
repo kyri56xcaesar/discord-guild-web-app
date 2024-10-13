@@ -115,9 +115,11 @@ func MemberHandler(w http.ResponseWriter, r *http.Request) {
 			RespondWithError(w, http.StatusBadRequest, "Could not delete the member")
 			return
 		}
-
-		// log.Printf("\nThe result of this thing is: %+v\n", res)
-		RespondWithJSON(w, http.StatusCreated, res)
+		if res == "1" {
+			RespondWithJSON(w, http.StatusCreated, "success")
+		} else {
+			RespondWithError(w, http.StatusNotFound, "failed")
+		}
 
 	} else if r.Method == "POST" {
 
@@ -274,7 +276,11 @@ func BotHandler(w http.ResponseWriter, r *http.Request) {
 				RespondWithError(w, http.StatusBadRequest, "Could not delete the bot")
 				return
 			}
-			RespondWithJSON(w, http.StatusCreated, res)
+			if res == "1" {
+				RespondWithJSON(w, http.StatusCreated, "success")
+			} else {
+				RespondWithError(w, http.StatusNotFound, "failed")
+			}
 
 		} else {
 			RespondWithError(w, http.StatusBadRequest, "must provide identifier")
@@ -404,10 +410,13 @@ func BotLineHandler(w http.ResponseWriter, r *http.Request) {
 			RespondWithError(w, http.StatusBadRequest, "Could not delete the line")
 			return
 		}
-		RespondWithJSON(w, http.StatusCreated, res)
-
+		if res == "1" {
+			RespondWithJSON(w, http.StatusCreated, "success")
+		} else {
+			RespondWithError(w, http.StatusNotFound, "failed")
+		}
 	} else {
-		RespondWithError(w, http.StatusMethodNotAllowed, "mot allowed mate")
+		RespondWithError(w, http.StatusMethodNotAllowed, "not allowed mate")
 	}
 
 }
