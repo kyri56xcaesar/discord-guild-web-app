@@ -356,7 +356,7 @@ func (dbh *DBHandler) GetBotLineByIdentifier(identifier string) (*models.Line, e
 	}
 	defer dbh.DB.Close()
 
-	row := dbh.DB.QueryRow("SELECT * FROM lines WHERE id = ?", identifier)
+	row := dbh.DB.QueryRow("SELECT * FROM lines WHERE lineid = ?", identifier)
 
 	line := models.Line{}
 

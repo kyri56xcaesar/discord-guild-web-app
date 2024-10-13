@@ -50,7 +50,7 @@ func (s *Server) routes() {
 	botsRouter.HandleFunc("/{identifier:[0-9]+}/", BotHandler).Methods("GET", "POST", "PUT", "DELETE")
 
 	botsRouter.HandleFunc("/lines", RootBotLineHandler).Methods("GET", "POST")
-	botsRouter.HandleFunc("/line/{identifier}/", BotLineHandler).Methods("GET", "PUT", "DELETE")
+	botsRouter.HandleFunc("/line/{identifier:[0-9]+}/", BotLineHandler).Methods("GET", "PUT", "DELETE")
 
 }
 
