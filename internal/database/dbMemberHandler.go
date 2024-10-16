@@ -35,7 +35,6 @@ func (dbh *DBHandler) InsertMember(u models.Member) (string, error) {
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		u.Guild, u.Username, u.Nick, u.Avatar, u.DisplayBanner, u.Banner,
 		u.DisplayBanner, u.User_color, u.JoinedAt, u.Status, u.MsgCount)
-
 	if err != nil {
 		log.Printf("There's been an error inserting the member %v in the DB."+err.Error(), u)
 		return "error inserting member", err
@@ -71,6 +70,8 @@ func (dbh *DBHandler) InsertMember(u models.Member) (string, error) {
 			successRCount++
 		}
 	}
+
+	log.Printf("Inserted %d/%d roles, %d/%d messages.", successRCount, len(u.Roles), successMCount, len(u.Messages))
 
 	return fmt.Sprintf("{'status':%v}", strconv.FormatInt(lastId, 10)), err
 }
@@ -108,7 +109,7 @@ func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) (string, er
 	defer stmt.Close() // Ensure the statement is closed after use
 
 	// Initialize counter for successful insertions
-	successCount := 0
+	var successMCount, successRCount, successCount int = 0, 0, 0
 
 	// Loop through each member and try to insert them
 	for _, u := range members {
@@ -120,7 +121,7 @@ func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) (string, er
 		}
 
 		// Execute the insert statement
-		_, err := stmt.Exec(u.Guild, u.Username, u.Nick, u.Avatar, u.DisplayAvatar, u.Banner,
+		res, err := stmt.Exec(u.Guild, u.Username, u.Nick, u.Avatar, u.DisplayAvatar, u.Banner,
 			u.DisplayBanner, u.User_color, u.JoinedAt, u.Status, u.MsgCount)
 		if err != nil {
 			log.Printf("Failed to insert member %v: %v", u, err)
@@ -128,8 +129,36 @@ func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) (string, er
 			continue // Skip faulty member and proceed with the next
 		}
 
+		lastId, err := res.LastInsertId()
+		if err != nil {
+			log.Printf("There's been an error retrieving result ID." + err.Error())
+			return "error retrieving data", err
+		}
+
 		// Increment the success counter if a row was inserted
 		successCount++
+
+		if u.Messages != nil {
+			for _, msg := range u.Messages {
+				_, err := dbh.DB.Exec(`INSERT INTO messages (userid, content, channel, createdat)
+			VALUES (?, ?, ?, ?)`, lastId, msg.Content, msg.Channel, msg.CreatedAt)
+				if err != nil {
+					log.Printf("Error inserting message %v into the database", msg)
+				}
+				successMCount++
+			}
+		}
+
+		if u.Roles != nil {
+			for _, role := range u.Roles {
+				_, err := dbh.DB.Exec(`INSERT INTO roles (userid, rolename, rolecolor) VALUES (?, ?, ?)`,
+					lastId, role.Role_name, role.Role_name)
+				if err != nil {
+					log.Printf("Error inserting role %v into the database", role)
+				}
+				successRCount++
+			}
+		}
 
 	}
 
@@ -143,7 +172,7 @@ func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) (string, er
 	return fmt.Sprintf("Successfully inserted %d members", successCount), nil
 }
 
-func (dbh *DBHandler) GetAllMembers() ([]models.Member, error) {
+func (dbh *DBHandler) GetAllMembers() ([]*models.Member, error) {
 
 	mu := &dbh.mu
 
@@ -163,11 +192,14 @@ func (dbh *DBHandler) GetAllMembers() ([]models.Member, error) {
 		log.Printf("There is been an error retrieving members from the database." + err.Error())
 		return nil, err
 	}
+	defer rows.Close()
 
-	var members []models.Member
+	var members []*models.Member
+	memberMap := make(map[int]*models.Member)
+
 	for rows.Next() {
 
-		var member models.Member
+		member := &models.Member{}
 
 		if err := rows.Scan(&member.ID, &member.Guild, &member.Username, &member.Nick,
 			&member.Avatar, &member.DisplayAvatar,
@@ -178,7 +210,52 @@ func (dbh *DBHandler) GetAllMembers() ([]models.Member, error) {
 			return nil, err
 		}
 
+		member.Roles = []models.Role{}
+		member.Messages = []models.Message{}
 		members = append(members, member)
+		memberMap[member.ID] = member
+	}
+
+	rrows, err := dbh.DB.Query("SELECT * FROM roles")
+	if err != nil {
+		log.Print("There is been an error retrieving roles with from the database. " + err.Error())
+		return nil, err
+	}
+	defer rrows.Close()
+
+	for rrows.Next() {
+		var role models.Role
+
+		if err := rrows.Scan(&role.ID, &role.UID, &role.Role_name, &role.Color); err != nil {
+			log.Print("There's been an error scanning user roles from the database " + err.Error())
+			return nil, err
+		}
+
+		if member, exists := memberMap[role.UID]; exists {
+			member.Roles = append(member.Roles, role)
+		}
+
+	}
+
+	mrows, err := dbh.DB.Query("SELECT * FROM messages")
+	if err != nil {
+		log.Print("There is been an error retrieving messages from the database. ", err.Error())
+		return nil, err
+	}
+	defer mrows.Close()
+
+	for mrows.Next() {
+		var message models.Message
+
+		if err := mrows.Scan(&message.ID, &message.UID, &message.Content, &message.Channel, &message.CreatedAt); err != nil {
+			log.Print("There's been an error scanning user messages from the database " + err.Error())
+			return nil, err
+		}
+
+		if member, exists := memberMap[message.UID]; exists {
+			member.Messages = append(member.Messages, message)
+		}
+
 	}
 
 	return members, nil

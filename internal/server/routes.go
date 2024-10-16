@@ -385,6 +385,10 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	RespondWithError(w, http.StatusNotFound, "Not Found")
 }
 
+func notAllowedHandler(w http.ResponseWriter, r *http.Request) {
+	RespondWithError(w, http.StatusMethodNotAllowed, "Not Allowed")
+}
+
 func HealthCheck(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v (Health Check)", r.Method, r.URL.Path)
 

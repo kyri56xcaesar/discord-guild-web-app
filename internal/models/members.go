@@ -18,6 +18,7 @@ type Member struct {
 }
 
 type Role struct {
+	ID        int    `json:"id"`
 	UID       int    `json:"userid"`
 	Role_name string `json:"rolename"`
 	Color     string `json:"rolecolor"`

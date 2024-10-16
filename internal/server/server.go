@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
 	"kyri56xcaesar/discord_bots_app/internal/database"
@@ -59,6 +61,7 @@ func (s *Server) routes() {
 	lineRouter.HandleFunc("/{identifier:[0-9]}/", LineHandler).Methods("GET", "PUT", "DELETE")
 
 	s.Router.NotFoundHandler = http.HandlerFunc(notFoundHandler)
+	s.Router.MethodNotAllowedHandler = http.HandlerFunc(notAllowedHandler)
 }
 
 func (s *Server) Start() {
@@ -99,18 +102,103 @@ func (s *Server) Start() {
 		}
 	}()
 
-	// Graceful shutdown
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt)
-	<-sig
+	// Set up a buffered channel for signals
+	sig := make(chan os.Signal, 10)
+	signal.Notify(sig, os.Interrupt, syscall.SIGUSR1, syscall.SIGUSR2)
 
-	// Context with timeout for graceful shutdown
+	// Mutex and timestamp for throttling server restarts
+	var restartMutex sync.Mutex
+	var lastRestart time.Time
+
+	for {
+		select {
+		case sigReceived := <-sig:
+			switch sigReceived {
+			case os.Interrupt:
+				log.Println("Received interrupt signal, shutting down gracefully...")
+
+				// Graceful shutdown
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+
+				if err := srv.Shutdown(ctx); err != nil {
+					log.Fatalf("Server shutdown failed: %v", err)
+				}
+				log.Println("Server exited properly")
+				return
+
+			case syscall.SIGUSR1:
+				go func() {
+					restartMutex.Lock()
+					defer restartMutex.Unlock()
+
+					// Throttle restarts to prevent excessive operations
+					if time.Since(lastRestart) > 5*time.Second {
+						log.Println("Restarting server...")
+						s.restartServer(srv)
+						lastRestart = time.Now()
+					} else {
+						log.Println("Server restart throttled")
+					}
+				}()
+
+			case syscall.SIGUSR2:
+				go func() {
+					log.Println("Re-running SQL init script...")
+					s.runSQLScript(config.DBfile)
+				}()
+			}
+		}
+	}
+
+}
+
+func (s *Server) restartServer(srv *http.Server) {
+	// Shutdown the current server
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Server shutdown failed: %v", err)
+		log.Printf("Error shutting down server for restart: %v", err)
+		return
+	}
+	log.Println("Server shut down for restart")
+
+	config, err := loadConfig(s.ConfPath)
+	if err != nil {
+		log.Fatalf("Error loading configuration: %v", err)
+	}
+	log.Printf("Config file: %+v", config)
+
+	// Restart the server with the same configuration
+	go func() {
+		newSrv := &http.Server{
+			Handler: s.Router,
+			Addr:    ":" + config.HTTPPort,
+		}
+		log.Println("Restarting server...")
+		if err := newSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server failed to restart: %v", err)
+		}
+	}()
+}
+
+// runSQLInitScript allows dynamically running an SQL script
+func (s *Server) runSQLScript(dbpath string) {
+	// Example: Dynamically get the SQL script path from the user
+	var scriptPath string
+	fmt.Print("Enter the path to the SQL initialization script: ")
+	fmt.Scanln(&scriptPath)
+
+	// Check if the file exists before proceeding
+	if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
+		log.Printf("SQL script not found at path: %s", scriptPath)
+		return
 	}
 
-	log.Println("Server exited properly")
+	if err := database.InitDB(dbpath, scriptPath); err != nil {
+		log.Printf("Error running SQL init script: %v", err)
+		return
+	}
+	log.Println("SQL init script executed successfully")
 }
