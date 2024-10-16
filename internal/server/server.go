@@ -1,10 +1,14 @@
 package server
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"time"
 
-	"kyri56xcaesar/discord_bots_app/internal/config"
 	"kyri56xcaesar/discord_bots_app/internal/database"
 
 	"github.com/gorilla/handlers"
@@ -12,14 +16,14 @@ import (
 )
 
 type Server struct {
-	Router    *mux.Router
-	Conf_path string //sqlite .db filepath
+	Router   *mux.Router
+	ConfPath string //sqlite .db filepath
 }
 
 func NewServer(conf string) *Server {
 	server := &Server{
-		Router:    mux.NewRouter(),
-		Conf_path: conf,
+		Router:   mux.NewRouter(),
+		ConfPath: conf,
 	}
 
 	server.routes()
@@ -40,6 +44,7 @@ func (s *Server) routes() {
 	guildRouter.HandleFunc("/", GuildHandler).Methods("GET", "POST")
 	guildRouter.HandleFunc("/members", MembersHandler).Methods("GET", "POST")
 	guildRouter.HandleFunc("/bots", BotsHandler).Methods("GET", "POST")
+	guildRouter.HandleFunc("/lines", RootLineHandler).Methods("GET", "POST")
 
 	membersRouter := guildRouter.PathPrefix("/member").Subrouter()
 	membersRouter.HandleFunc("/", RootMemberHandler).Methods("GET", "POST")
@@ -49,42 +54,63 @@ func (s *Server) routes() {
 	botsRouter.HandleFunc("/", RootBotHandler).Methods("GET", "POST")
 	botsRouter.HandleFunc("/{identifier:[0-9]+}/", BotHandler).Methods("GET", "POST", "PUT", "DELETE")
 
-	botsRouter.HandleFunc("/lines", RootBotLineHandler).Methods("GET", "POST")
-	botsRouter.HandleFunc("/line/{identifier:[0-9]+}/", BotLineHandler).Methods("GET", "PUT", "DELETE")
+	lineRouter := guildRouter.PathPrefix("/line").Subrouter()
+	lineRouter.HandleFunc("/", RootLineHandler).Methods("GET", "POST")
+	lineRouter.HandleFunc("/{identifier:[0-9]}/", LineHandler).Methods("GET", "PUT", "DELETE")
 
+	s.Router.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 }
 
 func (s *Server) Start() {
 
-	config, err := config.LoadConfig(s.Conf_path)
-
-	log.Printf("Config file: %v", config)
-
+	config, err := loadConfig(s.ConfPath)
 	if err != nil {
-		log.Fatalf("Required environment variables are missing: %+ v", err)
+		log.Fatalf("Error loading configuration: %v", err)
 	}
+	log.Printf("Config file: %+v", config)
 
-	if err = database.InitDB(config.DBfile, database.InitSQLScriptPath); err != nil {
+	curpath, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("Error getting current working directory: %v", err)
+	}
+	scriptPath := fmt.Sprintf("%s%s", curpath, database.InitSQLScriptPath)
+
+	if err = database.InitDB(config.DBfile, scriptPath); err != nil {
 		log.Fatalf("Error during db initialization: %v", err)
 	}
 
-	// Enable CORS for all routes
-	o := handlers.AllowedOrigins([]string{"*"}) // Allow all origins
-	h := handlers.AllowedHeaders([]string{
-		"X-Requested-With",
-		"Content-Type",
-		"Accept",
-		"Authorization",
-	})
-	m := handlers.AllowedMethods([]string{
-		"GET",
-		"POST",
-		"OPTIONS",
-	})
+	//Enable CORS for all routes
+	corsOptions := handlers.CORS(
+		handlers.AllowedOrigins(config.AllowedOrigins),
+		handlers.AllowedHeaders(config.AllowedHeaders),
+		handlers.AllowedMethods(config.AllowedMethods),
+	)
 
-	// Start the server
-	log.Println("Server listening on port " + config.HTTPPort)
-	if err := http.ListenAndServe(":"+config.HTTPPort, handlers.CORS(o, h, m)(s.Router)); err != nil {
-		log.Fatalf("Server failed: %v", err)
+	srv := &http.Server{
+		Handler: corsOptions(s.Router),
+		Addr:    ":" + config.HTTPPort,
 	}
+
+	// Start server in a goroutine
+	go func() {
+		log.Println("Server listening on port " + config.HTTPPort)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server failed: %v", err)
+		}
+	}()
+
+	// Graceful shutdown
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt)
+	<-sig
+
+	// Context with timeout for graceful shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("Server shutdown failed: %v", err)
+	}
+
+	log.Println("Server exited properly")
 }

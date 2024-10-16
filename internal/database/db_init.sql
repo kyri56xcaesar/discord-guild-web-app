@@ -1,17 +1,12 @@
 CREATE TABLE IF NOT EXISTS roles 
-		(
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			name TEXT UNIQUE
-		);
-		
-CREATE TABLE IF NOT EXISTS member_roles 
 (
-	memberid INTEGER,
-	roleid INTEGER,
-	PRIMARY KEY (memberid, roleid),
-	FOREIGN KEY (memberid) REFERENCES members (id),
-	FOREIGN KEY (roleid) REFERENCES roles (id)
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	userid INTEGER,
+	rolename TEXT,
+	rolecolor TEXT,
+	foreign key (userid) references members (id) 
 );
+		
 CREATE TABLE IF NOT EXISTS members 
 (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,4 +46,13 @@ CREATE TABLE IF NOT EXISTS lines (
 	ltype varchar(255),
 	createdat DATETIME DEFAULT CURRENT_TIMESTAMP,
 	foreign key (bid) references bots (botid)
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+	messageid	integer primary key AUTOINCREMENT,
+	userid		integer,
+	content		text,
+	channel		text,
+	createdat	text,
+	foreign key (userid) references members (id)
 );

@@ -11,7 +11,7 @@ import (
 // Bots
 func (dbh *DBHandler) GetAllBots() ([]models.Bot, error) {
 
-	mu := &dbh.MU
+	mu := &dbh.mu
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -50,7 +50,7 @@ func (dbh *DBHandler) GetAllBots() ([]models.Bot, error) {
 
 func (dbh *DBHandler) InsertMutipleBots(bots []models.Bot) (string, error) {
 
-	mu := &dbh.MU
+	mu := &dbh.mu
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -117,7 +117,7 @@ func (dbh *DBHandler) InsertMutipleBots(bots []models.Bot) (string, error) {
 }
 
 func (dbh *DBHandler) GetBotByIdentifier(identifier string) (*models.Bot, error) {
-	mu := &dbh.MU
+	mu := &dbh.mu
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -150,7 +150,7 @@ func (dbh *DBHandler) InsertBot(b *models.Bot) (string, error) {
 		return "0", err
 	}
 
-	mu := &dbh.MU
+	mu := &dbh.mu
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -181,7 +181,7 @@ func (dbh *DBHandler) InsertBot(b *models.Bot) (string, error) {
 }
 
 func (dbh *DBHandler) UpdateBotByIdentifier(b *models.Bot, identifier string) (string, error) {
-	mu := &dbh.MU
+	mu := &dbh.mu
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -212,7 +212,7 @@ func (dbh *DBHandler) UpdateBotByIdentifier(b *models.Bot, identifier string) (s
 }
 
 func (dbh *DBHandler) DeleteBotByIdentifier(identifier string) (string, error) {
-	mu := &dbh.MU
+	mu := &dbh.mu
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -243,7 +243,7 @@ func (dbh *DBHandler) DeleteBotByIdentifier(identifier string) (string, error) {
 // Lines
 func (dbh *DBHandler) GetBotLines() ([]models.Line, error) {
 
-	mu := &dbh.MU
+	mu := &dbh.mu
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -278,7 +278,7 @@ func (dbh *DBHandler) GetBotLines() ([]models.Line, error) {
 
 func (dbh *DBHandler) InsertMultipleLines(lines []models.Line) (string, error) {
 
-	mu := &dbh.MU
+	mu := &dbh.mu
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -345,7 +345,7 @@ func (dbh *DBHandler) InsertMultipleLines(lines []models.Line) (string, error) {
 
 func (dbh *DBHandler) GetBotLineByIdentifier(identifier string) (*models.Line, error) {
 
-	mu := &dbh.MU
+	mu := &dbh.mu
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -376,7 +376,7 @@ func (dbh *DBHandler) InsertLine(l *models.Line) (string, error) {
 		return "0", err
 	}
 
-	mu := &dbh.MU
+	mu := &dbh.mu
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -407,7 +407,7 @@ func (dbh *DBHandler) InsertLine(l *models.Line) (string, error) {
 }
 
 func (dbh *DBHandler) UpdateLineByIndentifier(l models.Line, identifier string) (string, error) {
-	mu := &dbh.MU
+	mu := &dbh.mu
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -439,7 +439,7 @@ func (dbh *DBHandler) UpdateLineByIndentifier(l models.Line, identifier string) 
 
 func (dbh *DBHandler) DeleteLineByIndentifier(identifier string) (string, error) {
 
-	mu := &dbh.MU
+	mu := &dbh.mu
 
 	mu.Lock()
 	defer mu.Unlock()

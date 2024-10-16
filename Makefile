@@ -1,10 +1,10 @@
 # Variables
 APP_NAME := myapp
-SRC := app.go config.go handlers.go
+SRC := cmd/api/main.go 
 
 # Default target: Build and run the application
 .PHONY: all
-all: build run
+all: build
 
 # Build the application
 .PHONY: build
@@ -13,7 +13,7 @@ build:
 
 # Run the application
 .PHONY: run
-run:
+run: build
 	./$(APP_NAME)
 
 # Clean up binaries and other generated files

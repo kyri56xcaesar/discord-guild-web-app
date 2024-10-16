@@ -125,7 +125,7 @@ async def gatherData(verbose=True, monthOffset=-1):
                     if item['username'] == message.author.name:
                     # Increment the 'messages' count by 1
                         item['messagecount'] += 1
-                        item['usermessages'].append(f'{message.clean_content}, {message.created_at}')
+                        item['usermessages'].append({"content":message.clean_content, "channel":message.channel.name, "createdat":message.created_at})
                         break  # Stop after finding the correct user
 
         

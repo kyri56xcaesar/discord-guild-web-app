@@ -19,7 +19,7 @@ func (dbh *DBHandler) InsertMember(u models.Member) (string, error) {
 		return "0", err
 	}
 
-	mu := &dbh.MU
+	mu := &dbh.mu
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -47,12 +47,37 @@ func (dbh *DBHandler) InsertMember(u models.Member) (string, error) {
 		return "error retrieving data", err
 	}
 
+	// Insert the Roles and Messages now
+
+	var successMCount, successRCount int = 0, 0
+	if u.Messages != nil {
+		for _, msg := range u.Messages {
+			_, err := dbh.DB.Exec(`INSERT INTO messages (userid, content, channel, createdat)
+			VALUES (?, ?, ?, ?)`, lastId, msg.Content, msg.Channel, msg.CreatedAt)
+			if err != nil {
+				log.Printf("Error inserting message %v into the database", msg)
+			}
+			successMCount++
+		}
+	}
+
+	if u.Roles != nil {
+		for _, role := range u.Roles {
+			_, err := dbh.DB.Exec(`INSERT INTO roles (userid, rolename, rolecolor) VALUES (?, ?, ?)`,
+				lastId, role.Role_name, role.Role_name)
+			if err != nil {
+				log.Printf("Error inserting role %v into the database", role)
+			}
+			successRCount++
+		}
+	}
+
 	return fmt.Sprintf("{'status':%v}", strconv.FormatInt(lastId, 10)), err
 }
 
 func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) (string, error) {
 
-	mu := &dbh.MU
+	mu := &dbh.mu
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -120,7 +145,7 @@ func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) (string, er
 
 func (dbh *DBHandler) GetAllMembers() ([]models.Member, error) {
 
-	mu := &dbh.MU
+	mu := &dbh.mu
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -161,7 +186,7 @@ func (dbh *DBHandler) GetAllMembers() ([]models.Member, error) {
 
 func (dbh *DBHandler) GetMemberByIdentifier(identifier string) (*models.Member, error) {
 
-	mu := &dbh.MU
+	mu := &dbh.mu
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -182,15 +207,15 @@ func (dbh *DBHandler) GetMemberByIdentifier(identifier string) (*models.Member, 
 		row = dbh.DB.QueryRow("SELECT * FROM members WHERE username = ?", identifier)
 
 	}
-	// if err != nil {
-	// 	log.Printf("There is been an error retrieving members from the database." + err.Error())
-	// 	return nil, err
-	// }
 
 	member := models.Member{}
 
 	if err := row.Scan(&member.ID, &member.Guild, &member.Username, &member.Nick, &member.Avatar, &member.DisplayAvatar, &member.Banner, &member.DisplayBanner, &member.User_color, &member.JoinedAt, &member.Status, &member.MsgCount); err != nil {
-		log.Printf("There's been an error scanning the member from the row." + err.Error())
+		if err == sql.ErrNoRows {
+			log.Printf("Member not found: %v", identifier)
+			return nil, nil
+		}
+		log.Printf("Error scanning member from the row: %v", err)
 		return nil, err
 	}
 
@@ -199,7 +224,7 @@ func (dbh *DBHandler) GetMemberByIdentifier(identifier string) (*models.Member, 
 
 func (dbh *DBHandler) DeleteMemberByIdentifier(identifier string) (string, error) {
 
-	mu := &dbh.MU
+	mu := &dbh.mu
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -238,7 +263,7 @@ func (dbh *DBHandler) DeleteMemberByIdentifier(identifier string) (string, error
 
 func (dbh *DBHandler) UpdateMemberByIdentifier(u models.Member, identifier string) (string, error) {
 
-	mu := &dbh.MU
+	mu := &dbh.mu
 
 	mu.Lock()
 	defer mu.Unlock()

@@ -13,51 +13,50 @@ import (
 
 const DBName string = "dads.db"
 
-// var members []models.Member // Not needed for now.. perhaps configure some memory operation-caching work
-// var bots []models.Bot // Not needed for now.. perhaps configure some memory operation-caching work
-
 func RootHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
-	RespondWithJSON(w, http.StatusOK, "OK")
+	RespondWithJSON(w, http.StatusOK, "Up")
 }
 
 func MembersHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
 	dbh := database.GetConnector(DBName)
+	if dbh == nil {
+		RespondWithError(w, http.StatusInternalServerError, "Database connection failed")
+		return
+	}
 
-	if r.Method == "GET" {
-
+	switch r.Method {
+	case http.MethodGet:
 		res, err := dbh.GetAllMembers()
 		if err != nil {
-			log.Printf("Error getting fetching members from the DB... " + err.Error())
-			RespondWithError(w, http.StatusBadRequest, err.Error())
+			RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve members")
 			return
 		}
-		// log.Printf("\nThe result of this thing is: %+v\n", res)
+		if res == nil {
+			// If the result is nil, return 404
+			RespondWithError(w, http.StatusNotFound, "Members not found")
+			return
+		}
 		RespondWithJSON(w, http.StatusOK, res)
 
-	} else if r.Method == "POST" {
-
+	case http.MethodPost:
 		var newMembers []models.Member
-		err := json.NewDecoder(r.Body).Decode(&newMembers)
-		if err != nil {
-			log.Printf("Error decoding JSON: %v", err)
-			RespondWithError(w, http.StatusBadRequest, err.Error())
+		if err := json.NewDecoder(r.Body).Decode(&newMembers); err != nil {
+			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
 			return
 		}
-		_, err = dbh.InsertMultipleMembers(newMembers)
-		if err != nil {
-			log.Printf("Error inserting multiple members in the DB... " + err.Error())
-			RespondWithError(w, http.StatusBadRequest, err.Error())
+		if _, err := dbh.InsertMultipleMembers(newMembers); err != nil {
+			RespondWithError(w, http.StatusInternalServerError, "Failed to insert members")
 			return
 		}
 
 		RespondWithJSON(w, http.StatusCreated, newMembers)
 
-	} else {
-		RespondWithError(w, http.StatusMethodNotAllowed, "Not allowed mate")
+	default:
+		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
 
 }
@@ -68,81 +67,75 @@ func MemberHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	identifier := vars["identifier"]
 
-	dbh := database.GetConnector(DBName)
-
 	if !IsAlphanumeric(identifier) {
-		RespondWithError(w, http.StatusMethodNotAllowed, "Nah")
+		RespondWithError(w, http.StatusBadRequest, "Invalid identifier")
 		return
 	}
 
-	if r.Method == "GET" {
-		// Call ID
+	dbh := database.GetConnector(DBName)
 
+	switch r.Method {
+	case http.MethodGet:
+		// Call ID
 		res, err := dbh.GetMemberByIdentifier(identifier)
 		if err != nil {
-			log.Printf("Error getting member by identifier %v...: %v", identifier, err.Error())
-			RespondWithError(w, http.StatusBadRequest, "Could not reach member")
+			// log.Printf("Error getting member by identifier %v...: %v", identifier, err.Error())
+			RespondWithError(w, http.StatusNotFound, "Member not found")
+			return
+		}
+
+		if res == nil {
+			// If the result is nil, return 404
+			// log.Printf("Member with identifier %v not found", identifier)
+			RespondWithError(w, http.StatusNotFound, "Member not found")
 			return
 		}
 
 		// log.Printf("\nThe result of this thing is: %+v\n", res)
 		RespondWithJSON(w, http.StatusOK, res)
 
-	} else if r.Method == "PUT" {
-
+	case http.MethodPut:
 		var updatedMember models.Member
-		err := json.NewDecoder(r.Body).Decode(&updatedMember)
-		if err != nil {
-			log.Printf("Error decoding JSON: %v", err)
-			RespondWithError(w, http.StatusBadRequest, "BadR")
+		if err := json.NewDecoder(r.Body).Decode(&updatedMember); err != nil {
+			// log.Printf("Error decoding JSON: %v", err)
+			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
 			return
 		}
 
-		_, err = dbh.UpdateMemberByIdentifier(updatedMember, identifier)
-		if err != nil {
-			log.Printf("Error updating member %v... : %v", identifier, err.Error())
-			RespondWithError(w, http.StatusBadRequest, "Could not update member")
+		if _, err := dbh.UpdateMemberByIdentifier(updatedMember, identifier); err != nil {
+			// log.Printf("Error updating member %v... : %v", identifier, err.Error())
+			RespondWithError(w, http.StatusInternalServerError, "Failed to update member")
 			return
 		}
 		// log.Printf("\nThe result of this thing is: %+v\n", res)
 		RespondWithJSON(w, http.StatusOK, updatedMember)
 
-	} else if r.Method == "DELETE" {
-
-		res, err := dbh.DeleteMemberByIdentifier(identifier)
-		if err != nil {
-			log.Printf("Error deleting member :%v ...: %v", identifier, err.Error())
-			RespondWithError(w, http.StatusBadRequest, "Could not delete the member")
+	case http.MethodDelete:
+		if _, err := dbh.DeleteMemberByIdentifier(identifier); err != nil {
+			// log.Printf("Error deleting member :%v ...: %v", identifier, err.Error())
+			RespondWithError(w, http.StatusBadRequest, "Failed to delete member")
 			return
 		}
-		if res == "1" {
-			RespondWithJSON(w, http.StatusCreated, "success")
-		} else {
-			RespondWithError(w, http.StatusNotFound, "failed")
-		}
+		RespondWithJSON(w, http.StatusNoContent, "Deletion success")
 
-	} else if r.Method == "POST" {
-
+	case http.MethodPost:
 		var newMember models.Member
-		err := json.NewDecoder(r.Body).Decode(&newMember)
-		if err != nil {
-			log.Printf("Error decoding JSON: %v", err)
-			RespondWithError(w, http.StatusBadRequest, "Could not create member")
+		if err := json.NewDecoder(r.Body).Decode(&newMember); err != nil {
+			// log.Printf("Error decoding JSON: %v", err)
+			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
 			return
 		}
 
-		res, err := dbh.InsertMember(newMember)
-		if err != nil {
-			log.Printf("Error inserting member %v...: %v", newMember, err.Error())
+		if _, err := dbh.InsertMember(newMember); err != nil {
+			// log.Printf("Error inserting member %v...: %v", newMember, err.Error())
 			RespondWithError(w, http.StatusBadRequest, "Did not insert the member")
 			return
 		}
 
-		// log.Printf("\nThe result of this thing is: %+v\n", res)
-		RespondWithJSON(w, http.StatusCreated, res)
+		RespondWithJSON(w, http.StatusCreated, newMember)
 
-	} else {
-		RespondWithError(w, http.StatusMethodNotAllowed, "Not allowed mate")
+	default:
+		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
 
 }
@@ -152,31 +145,27 @@ func RootMemberHandler(w http.ResponseWriter, r *http.Request) {
 
 	dbh := database.GetConnector(DBName)
 
-	if r.Method == "GET" {
+	switch r.Method {
+	case http.MethodGet:
 		http.Redirect(w, r, "/guild/members", http.StatusMovedPermanently)
 
-	} else if r.Method == "POST" {
-
+	case http.MethodPost:
 		var newMember models.Member
-		err := json.NewDecoder(r.Body).Decode(&newMember)
-		if err != nil {
-			log.Printf("Error decoding JSON: %v", err)
-			RespondWithError(w, http.StatusBadRequest, "BadR")
+		if err := json.NewDecoder(r.Body).Decode(&newMember); err != nil {
+			// log.Printf("Error decoding JSON: %v", err)
+			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
 			return
 		}
 
-		res, err := dbh.InsertMember(newMember)
-		if err != nil {
-			log.Printf("Error inserting a single member: %v... %v", newMember, err.Error())
-			RespondWithError(w, http.StatusBadRequest, "Could not insert member")
+		if _, err := dbh.InsertMember(newMember); err != nil {
+			// log.Printf("Error inserting a single member: %v... %v", newMember, err.Error())
+			RespondWithError(w, http.StatusBadRequest, "Failed to insert member")
 			return
 		}
+		RespondWithJSON(w, http.StatusCreated, newMember)
 
-		// log.Printf("\nThe result of this thing is: %+v\n", res)
-		RespondWithJSON(w, http.StatusCreated, res)
-
-	} else {
-		RespondWithError(w, http.StatusMethodNotAllowed, "Not allowed mate")
+	default:
+		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
 
 }
@@ -184,30 +173,28 @@ func RootMemberHandler(w http.ResponseWriter, r *http.Request) {
 func GuildHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
-	w.Write([]byte("{'Guild'}"))
+	RespondWithJSON(w, http.StatusFound, "{'guilds'}")
 }
 
 func RootBotHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 	dbh := database.GetConnector(DBName)
 
-	if r.Method == "GET" {
+	switch r.Method {
+	case http.MethodGet:
 		log.Print("Redirecting to /guild/bots/")
 		http.Redirect(w, r, "/guild/bots", http.StatusMovedPermanently)
-	} else if r.Method == "POST" {
-
+	case http.MethodPost:
 		var newBot models.Bot
 		err := json.NewDecoder(r.Body).Decode(&newBot)
 		if err != nil {
-			log.Printf("Error decoding JSON: %v", err)
-			RespondWithError(w, http.StatusBadRequest, err.Error())
+			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
 			return
 		}
 
 		_, err = dbh.InsertBot(&newBot)
 		if err != nil {
-			log.Printf("Error inserting multiple lines in the DB... " + err.Error())
-			RespondWithError(w, http.StatusBadRequest, err.Error())
+			RespondWithError(w, http.StatusBadRequest, "Failed to insert multiple lines")
 		} else {
 			RespondWithJSON(w, http.StatusCreated, newBot)
 		}
@@ -215,79 +202,51 @@ func RootBotHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func BotHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
 	dbh := database.GetConnector(DBName)
+
 	vars := mux.Vars(r)
-	identifier, idExists := vars["identifier"]
-	log.Printf("Identifier: %s", identifier)
+	identifier := vars["identifier"]
+	log.Printf("%v request on path: %v with identifier %v", r.Method, r.URL.Path, identifier)
 
-	if r.Method == "GET" {
-		if idExists {
-			// Get specific identifier
-			res, err := dbh.GetBotByIdentifier(identifier)
-			if err != nil {
-				log.Printf("Error getting bot by identifier %v...: %v", identifier, err.Error())
-				RespondWithError(w, http.StatusBadRequest, "Could not reach bot")
-				return
-			}
-
-			RespondWithJSON(w, http.StatusOK, res)
-		} else {
-			// Get everything
-			res, err := dbh.GetAllBots()
-			if err != nil {
-				log.Printf("Error fetching bots from the DB... " + err.Error())
-				RespondWithError(w, http.StatusBadRequest, err.Error())
-				return
-			}
-			// log.Printf("\nThe result of this thing is: %+v\n", res)
-			RespondWithJSON(w, http.StatusOK, res)
+	switch r.Method {
+	case http.MethodGet:
+		// Get specific identifier
+		res, err := dbh.GetBotByIdentifier(identifier)
+		if err != nil {
+			RespondWithError(w, http.StatusBadRequest, "Failed to get bot")
+			return
 		}
 
-	} else if r.Method == "PUT" {
-		if idExists {
-
-			var updatedBot models.Bot
-			err := json.NewDecoder(r.Body).Decode(&updatedBot)
-			if err != nil {
-				log.Printf("Error decoding JSON: %v", err)
-				RespondWithError(w, http.StatusBadRequest, "BadR")
-				return
-			}
-
-			_, err = dbh.UpdateBotByIdentifier(&updatedBot, identifier)
-			if err != nil {
-				log.Printf("Error updating bot %v... : %v", identifier, err.Error())
-				RespondWithError(w, http.StatusBadRequest, "Could not update bot")
-				return
-			}
-			// log.Printf("\nThe result of this thing is: %+v\n", res)
-			RespondWithJSON(w, http.StatusOK, updatedBot)
-
-		} else {
-			RespondWithError(w, http.StatusBadRequest, "must provide identifier")
+		if res == nil {
+			// If the result is nil, return 404
+			RespondWithError(w, http.StatusNotFound, "Bot not found")
+			return
 		}
-	} else if r.Method == "DELETE" {
-		if idExists {
-			res, err := dbh.DeleteBotByIdentifier(identifier)
-			if err != nil {
-				log.Printf("Error deleting bot :%v ...: %v", identifier, err.Error())
-				RespondWithError(w, http.StatusBadRequest, "Could not delete the bot")
-				return
-			}
-			if res == "1" {
-				RespondWithJSON(w, http.StatusCreated, "success")
-			} else {
-				RespondWithError(w, http.StatusNotFound, "failed")
-			}
+		RespondWithJSON(w, http.StatusOK, res)
 
-		} else {
-			RespondWithError(w, http.StatusBadRequest, "must provide identifier")
+	case http.MethodPut:
+		var updatedBot models.Bot
+		if err := json.NewDecoder(r.Body).Decode(&updatedBot); err != nil {
+			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
+			return
 		}
+		if _, err := dbh.UpdateBotByIdentifier(&updatedBot, identifier); err != nil {
+			log.Printf("Error updating bot %v... : %v", identifier, err.Error())
+			RespondWithError(w, http.StatusBadRequest, "Could not update bot")
+			return
+		}
+		RespondWithJSON(w, http.StatusOK, updatedBot)
 
-	} else {
-		RespondWithError(w, http.StatusMethodNotAllowed, "mot allowed mate")
+	case http.MethodDelete:
+		if _, err := dbh.DeleteBotByIdentifier(identifier); err != nil {
+			RespondWithError(w, http.StatusInternalServerError, "Failed to delete bot")
+			return
+		}
+		RespondWithJSON(w, http.StatusNoContent, "Deletion success")
+
+	default:
+		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
 }
 
@@ -296,66 +255,69 @@ func BotsHandler(w http.ResponseWriter, r *http.Request) {
 
 	dbh := database.GetConnector(DBName)
 
-	if r.Method == "GET" {
-
+	switch r.Method {
+	case http.MethodGet:
 		res, err := dbh.GetAllBots()
 		if err != nil {
-			log.Printf("Error getting fetching bots from the DB... " + err.Error())
-			RespondWithError(w, http.StatusBadRequest, err.Error())
+			RespondWithError(w, http.StatusBadRequest, "Failed to get bots")
 			return
 		}
-		// log.Printf("\nThe result of this thing is: %+v\n", res)
+		if res == nil {
+			// If the result is nil, return 404
+			RespondWithError(w, http.StatusNotFound, "Bots not found")
+			return
+		}
 		RespondWithJSON(w, http.StatusOK, res)
 
-	} else if r.Method == "POST" {
-
+	case http.MethodPost:
 		var newBots []models.Bot
-		err := json.NewDecoder(r.Body).Decode(&newBots)
-		if err != nil {
-			log.Printf("Error decoding JSON: %v", err)
-			RespondWithError(w, http.StatusBadRequest, err.Error())
+		if err := json.NewDecoder(r.Body).Decode(&newBots); err != nil {
+			RespondWithError(w, http.StatusBadRequest, "Invalid JSON formant")
 			return
 		}
-		_, err = dbh.InsertMutipleBots(newBots)
-		if err != nil {
-			log.Printf("Error inserting multiple bots in the DB... " + err.Error())
-			RespondWithError(w, http.StatusBadRequest, err.Error())
+		if _, err := dbh.InsertMutipleBots(newBots); err != nil {
+			RespondWithError(w, http.StatusBadRequest, "Failed to insert bots")
 		} else {
-			// log.Printf("\nThe result of this thing is: %+v\n", res)
 			RespondWithJSON(w, http.StatusCreated, newBots)
 		}
 
-	} else {
-		RespondWithError(w, http.StatusMethodNotAllowed, "Not allowed mate")
+	default:
+		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
 }
 
-func RootBotLineHandler(w http.ResponseWriter, r *http.Request) {
+func RootLineHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
 	dbh := database.GetConnector(DBName)
 
-	if r.Method == "GET" {
+	switch r.Method {
+	case http.MethodGet:
 		// Get everything
 		res, err := dbh.GetBotLines()
 		if err != nil {
 			log.Printf("Error fetching lines from the DB... " + err.Error())
-			RespondWithError(w, http.StatusBadRequest, err.Error())
+			RespondWithError(w, http.StatusBadRequest, "Failed to get lines")
+			return
+		}
+
+		if res == nil {
+			// If the result is nil, return 404
+			log.Printf("Lines not found")
+			RespondWithError(w, http.StatusNotFound, "Lines not found")
 			return
 		}
 		RespondWithJSON(w, http.StatusOK, res)
-	} else if r.Method == "POST" {
+	case http.MethodPost:
 		var newLines []models.Line
-		err := json.NewDecoder(r.Body).Decode(&newLines)
-		if err != nil {
+		if err := json.NewDecoder(r.Body).Decode(&newLines); err != nil {
 			log.Printf("Error decoding JSON: %v", err)
-			RespondWithError(w, http.StatusBadRequest, err.Error())
+			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
 			return
 		}
-		_, err = dbh.InsertMultipleLines(newLines)
-		if err != nil {
+		if _, err := dbh.InsertMultipleLines(newLines); err != nil {
 			log.Printf("Error inserting multiple lines in the DB... " + err.Error())
-			RespondWithError(w, http.StatusBadRequest, err.Error())
+			RespondWithError(w, http.StatusBadRequest, "Failed to insert lines")
 		} else {
 			RespondWithJSON(w, http.StatusCreated, newLines)
 		}
@@ -363,15 +325,18 @@ func RootBotLineHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func BotLineHandler(w http.ResponseWriter, r *http.Request) {
+func LineHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
 	dbh := database.GetConnector(DBName)
+
 	vars := mux.Vars(r)
 	identifier := vars["identifier"]
+
 	log.Printf("Identifier: %s", identifier)
 
-	if r.Method == "GET" {
+	switch r.Method {
+	case http.MethodGet:
 		// Get specific identifier
 		res, err := dbh.GetBotLineByIdentifier(identifier)
 		if err != nil {
@@ -379,46 +344,45 @@ func BotLineHandler(w http.ResponseWriter, r *http.Request) {
 			RespondWithError(w, http.StatusBadRequest, "Could not reach line")
 			return
 		}
+		if res == nil {
+			// If the result is nil, return 404
+			log.Printf("Line with identifier %v not found", identifier)
+			RespondWithError(w, http.StatusNotFound, "Line not found")
+			return
+		}
 		RespondWithJSON(w, http.StatusOK, res)
 
-	} else if r.Method == "PUT" {
-
+	case http.MethodPut:
 		var updatedLine models.Line
-		err := json.NewDecoder(r.Body).Decode(&updatedLine)
-		if err != nil {
+		if err := json.NewDecoder(r.Body).Decode(&updatedLine); err != nil {
 			log.Printf("Error decoding JSON: %v", err)
-			RespondWithError(w, http.StatusBadRequest, "BadR")
+			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
 			return
 		}
 
-		_, err = dbh.UpdateLineByIndentifier(updatedLine, identifier)
-		if err != nil {
+		if _, err := dbh.UpdateLineByIndentifier(updatedLine, identifier); err != nil {
 			log.Printf("Error updating line %v... : %v", identifier, err.Error())
 			RespondWithError(w, http.StatusBadRequest, "Could not update line")
 			return
 		}
-		// log.Printf("\nThe result of this thing is: %+v\n", res)
+
 		RespondWithJSON(w, http.StatusOK, updatedLine)
 
-		RespondWithError(w, http.StatusBadRequest, "must provide identifier")
-
-	} else if r.Method == "DELETE" {
-
-		res, err := dbh.DeleteLineByIndentifier(identifier)
-		if err != nil {
+	case http.MethodDelete:
+		if _, err := dbh.DeleteLineByIndentifier(identifier); err != nil {
 			log.Printf("Error deleting line :%v ...: %v", identifier, err.Error())
 			RespondWithError(w, http.StatusBadRequest, "Could not delete the line")
 			return
 		}
-		if res == "1" {
-			RespondWithJSON(w, http.StatusCreated, "success")
-		} else {
-			RespondWithError(w, http.StatusNotFound, "failed")
-		}
-	} else {
-		RespondWithError(w, http.StatusMethodNotAllowed, "not allowed mate")
+		RespondWithJSON(w, http.StatusCreated, "Delete success")
+
+	default:
+		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
 
+}
+func notFoundHandler(w http.ResponseWriter, r *http.Request) {
+	RespondWithError(w, http.StatusNotFound, "Not Found")
 }
 
 func HealthCheck(w http.ResponseWriter, r *http.Request) {

@@ -1,25 +1,46 @@
 package models
 
 type Member struct {
-	Guild         string   `json:"userguild"`
-	ID            int      `json:"userid"`
-	Username      string   `json:"username"`
-	Nick          string   `json:"nickname"`
-	Avatar        string   `json:"avatarurl"`
-	DisplayAvatar string   `json:"displayavatarurl"`
-	Banner        string   `json:"bannerurl"`
-	DisplayBanner string   `json:"displaybannerurl"`
-	User_color    string   `json:"usercolor"`
-	JoinedAt      string   `json:"joinedat"`
-	Status        string   `json:"userstatus"`
-	Roles         []Role   `json:"userroles"`
-	Messages      []string `json:"usermessages"`
-	MsgCount      int      `json:"messagecount"`
+	Guild         string    `json:"userguild"`
+	ID            int       `json:"userid"`
+	Username      string    `json:"username"`
+	Nick          string    `json:"nickname"`
+	Avatar        string    `json:"avatarurl"`
+	DisplayAvatar string    `json:"displayavatarurl"`
+	Banner        string    `json:"bannerurl"`
+	DisplayBanner string    `json:"displaybannerurl"`
+	User_color    string    `json:"usercolor"`
+	JoinedAt      string    `json:"joinedat"`
+	Status        string    `json:"userstatus"`
+	Roles         []Role    `json:"userroles"`
+	Messages      []Message `json:"usermessages"`
+	MsgCount      int       `json:"messagecount"`
 }
 
 type Role struct {
-	Role_name string `json:"role_name"`
-	Color     string `json:"role_color"`
+	UID       int    `json:"userid"`
+	Role_name string `json:"rolename"`
+	Color     string `json:"rolecolor"`
+}
+
+type Message struct {
+	ID        int    `json:"messageid"`
+	UID       int    `json:"userid"`
+	Content   string `json:"content"`
+	Channel   string `json:"channel"`
+	CreatedAt string `json:"createdat"`
+}
+
+func (msg *Message) VerifyMessage() error {
+	if !isValidUTF8String(msg.Content) {
+		return &FieldError{Field: "Content", Message: "must contain letters, numbers or symbols"}
+	}
+
+	if !isValidUTF8String(msg.Channel) {
+		return &FieldError{Field: "Channel", Message: "must contain letters, numbers or symbols"}
+	}
+
+	return nil
 }
 
 func (m *Member) VerifyMember() error {
@@ -58,7 +79,7 @@ func (m *Member) VerifyMember() error {
 	}
 
 	for _, message := range m.Messages {
-		if !isValidUTF8String(message) {
+		if !isValidUTF8String(message.Content) {
 			return &FieldError{Field: "Message", Message: "must contain letters, numbers or symbols"}
 
 		}
