@@ -17,8 +17,8 @@ func (e *FieldError) Error() string {
 }
 
 func isValidUTF8String(s string) bool {
-	// re := regexp.MustCompile(`^[\p{L}\p{N}]+$`)
-	re := regexp.MustCompile(`^[\p{L}\p{N}!@#\$%\^&\*\(\):\?><\.\-]+$`)
+	// Updated regex to include space (\s) and new line (\n) characters
+	re := regexp.MustCompile(`^[\p{L}\p{N}\s\n!@#\$%\^&\*\(\):\?><\.\-]+$`)
 
 	return re.MatchString(s)
 }

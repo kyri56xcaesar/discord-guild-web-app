@@ -108,7 +108,6 @@ func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) (string, er
 	}
 	defer stmt.Close() // Ensure the statement is closed after use
 
-	// Initialize counter for successful insertions
 	var successMCount, successRCount, successCount int = 0, 0, 0
 
 	// Loop through each member and try to insert them
@@ -132,7 +131,7 @@ func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) (string, er
 		lastId, err := res.LastInsertId()
 		if err != nil {
 			log.Printf("There's been an error retrieving result ID." + err.Error())
-			return "error retrieving data", err
+			break
 		}
 
 		// Increment the success counter if a row was inserted
@@ -286,6 +285,8 @@ func (dbh *DBHandler) GetMemberByIdentifier(identifier string) (*models.Member, 
 	}
 
 	member := models.Member{}
+	member.Roles = []models.Role{}
+	member.Messages = []models.Message{}
 
 	if err := row.Scan(&member.ID, &member.Guild, &member.Username, &member.Nick, &member.Avatar, &member.DisplayAvatar, &member.Banner, &member.DisplayBanner, &member.User_color, &member.JoinedAt, &member.Status, &member.MsgCount); err != nil {
 		if err == sql.ErrNoRows {
@@ -294,6 +295,38 @@ func (dbh *DBHandler) GetMemberByIdentifier(identifier string) (*models.Member, 
 		}
 		log.Printf("Error scanning member from the row: %v", err)
 		return nil, err
+	}
+
+	rrows, err := dbh.DB.Query("SELECT * FROM roles WHERE userid = ?", member.ID)
+	if err == nil {
+		defer rrows.Close()
+
+		for rrows.Next() {
+			var role models.Role
+
+			if err := rrows.Scan(&role.ID, &role.UID, &role.Role_name, &role.Color); err != nil {
+				log.Printf("There's been an error scanning a role for userid %v %v", member.ID, err.Error())
+				break
+			}
+
+			member.Roles = append(member.Roles, role)
+		}
+	}
+
+	mrows, err := dbh.DB.Query("SELECT * FROM messages WHERE userid = ?", member.ID)
+	if err == nil {
+		defer mrows.Close()
+
+		for mrows.Next() {
+			var message models.Message
+
+			if err := mrows.Scan(&message.ID, &message.UID, &message.Content, &message.Channel, &message.CreatedAt); err != nil {
+				log.Printf("There's been an error scanning a message for userid %v %v", member.ID, err.Error())
+				break
+			}
+
+			member.Messages = append(member.Messages, message)
+		}
 	}
 
 	return &member, nil

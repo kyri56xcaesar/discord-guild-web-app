@@ -40,6 +40,7 @@ func (s *Server) routes() {
 	// Root handler for health check
 	s.Router.HandleFunc("/", RootHandler)
 	s.Router.HandleFunc("/healthz", HealthCheck)
+	s.Router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("./cmd/api/web/assets"))))
 
 	// Subrouter for /guild
 	guildRouter := s.Router.PathPrefix("/guild").Subrouter()
@@ -58,7 +59,7 @@ func (s *Server) routes() {
 
 	lineRouter := guildRouter.PathPrefix("/line").Subrouter()
 	lineRouter.HandleFunc("/", RootLineHandler).Methods("GET", "POST")
-	lineRouter.HandleFunc("/{identifier:[0-9]}/", LineHandler).Methods("GET", "PUT", "DELETE")
+	lineRouter.HandleFunc("/{identifier:[0-9]+}/", LineHandler).Methods("GET", "PUT", "DELETE")
 
 	s.Router.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	s.Router.MethodNotAllowedHandler = http.HandlerFunc(notAllowedHandler)
@@ -144,7 +145,7 @@ func (s *Server) Start() {
 
 			case syscall.SIGUSR2:
 				go func() {
-					log.Println("Re-running SQL init script...")
+					log.Println("Entering script execution prompt...")
 					s.runSQLScript(config.DBfile)
 				}()
 			}

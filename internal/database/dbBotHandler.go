@@ -9,7 +9,7 @@ import (
 )
 
 // Bots
-func (dbh *DBHandler) GetAllBots() ([]models.Bot, error) {
+func (dbh *DBHandler) GetAllBots() ([]*models.Bot, error) {
 
 	mu := &dbh.mu
 
@@ -30,10 +30,14 @@ func (dbh *DBHandler) GetAllBots() ([]models.Bot, error) {
 		return nil, err
 	}
 
-	var bots []models.Bot
+	defer rows.Close()
+
+	var bots []*models.Bot
+	botMap := make(map[int]*models.Bot)
+
 	for rows.Next() {
 
-		var bot models.Bot
+		bot := &models.Bot{}
 
 		if err := rows.Scan(&bot.ID, &bot.Guild, &bot.Name, &bot.Avatar,
 			&bot.Banner, &bot.CreatedAt, &bot.Author, &bot.Status, &bot.IsSinger,
@@ -42,13 +46,35 @@ func (dbh *DBHandler) GetAllBots() ([]models.Bot, error) {
 			return nil, err
 		}
 
+		bot.Lines = []models.Line{}
 		bots = append(bots, bot)
+		botMap[bot.ID] = bot
+	}
+
+	lrows, err := dbh.DB.Query("SELECT * FROM lines")
+	if err != nil {
+		log.Printf("There's been an error retrieving lines from database, %v", err.Error())
+		return bots, err
+	}
+	defer lrows.Close()
+
+	for lrows.Next() {
+		var line models.Line
+
+		if err := lrows.Scan(&line.ID, &line.BID, &line.Phrase, &line.Author, &line.To, &line.LineType, &line.CreatedAt); err != nil {
+			log.Print("There's been an error scanning line. " + err.Error())
+			return bots, err
+		}
+
+		if bot, exists := botMap[line.BID]; exists {
+			bot.Lines = append(bot.Lines, line)
+		}
 	}
 
 	return bots, nil
 }
 
-func (dbh *DBHandler) InsertMutipleBots(bots []models.Bot) (string, error) {
+func (dbh *DBHandler) InsertMultipleBots(bots []models.Bot) (string, error) {
 
 	mu := &dbh.mu
 	mu.Lock()
@@ -81,9 +107,8 @@ func (dbh *DBHandler) InsertMutipleBots(bots []models.Bot) (string, error) {
 	defer stmt.Close() // Ensure the statement is closed after use
 
 	// Initialize counter for successful insertions
-	successCount := 0
+	var successCount, successLCount int = 0, 0
 
-	// Loop through each member and try to insert them
 	for _, b := range bots {
 		// Verify the member's data
 		err = b.VerifyBot()
@@ -93,7 +118,7 @@ func (dbh *DBHandler) InsertMutipleBots(bots []models.Bot) (string, error) {
 		}
 
 		// Execute the insert statement
-		_, err := stmt.Exec(b.Guild, b.Name, b.Avatar, b.Banner, b.CreatedAt, b.Author,
+		res, err := stmt.Exec(b.Guild, b.Name, b.Avatar, b.Banner, b.CreatedAt, b.Author,
 			b.Status, b.IsSinger)
 		if err != nil {
 			log.Printf("Failed to insert bot %v: %v", b, err)
@@ -101,8 +126,28 @@ func (dbh *DBHandler) InsertMutipleBots(bots []models.Bot) (string, error) {
 			continue // Skip faulty member and proceed with the next
 		}
 
+		lastId, err := res.LastInsertId()
+		if err != nil {
+			log.Printf("There's been an error retrieving result ID. " + err.Error())
+			break
+		}
 		// Increment the success counter if a row was inserted
 		successCount++
+
+		if b.Lines != nil {
+			for _, line := range b.Lines {
+				_, err := dbh.DB.Exec(`
+				INSERT INTO lines 
+					(bid, phrase, author, toid, ltype, createdat)
+				VALUES 
+					(?, ?, ?, ?, ?, ?)`,
+					lastId, line.Phrase, line.Author, line.To, line.LineType, line.CreatedAt)
+				if err != nil {
+					log.Printf("Error inserting line %v into the database, %v", line, err.Error())
+				}
+				successLCount++
+			}
+		}
 
 	}
 
@@ -131,12 +176,29 @@ func (dbh *DBHandler) GetBotByIdentifier(identifier string) (*models.Bot, error)
 	row := dbh.DB.QueryRow("SELECT * FROM bots WHERE botid = ?", identifier)
 
 	bot := models.Bot{}
+	bot.Lines = []models.Line{}
 
 	if err := row.Scan(&bot.ID, &bot.Guild, &bot.Name, &bot.Avatar,
 		&bot.Banner, &bot.CreatedAt, &bot.Author, &bot.Status, &bot.IsSinger,
 	); err != nil {
 		log.Printf("There's been an error scanning the Line from rows. %v", err.Error())
 		return nil, err
+	}
+
+	lrows, err := dbh.DB.Query("SELECT * FROM lines WHERE bid = ?", bot.ID)
+	if err == nil {
+		defer lrows.Close()
+
+		for lrows.Next() {
+			var line models.Line
+
+			if err := lrows.Scan(&line.ID, &line.BID, &line.Phrase, &line.Author, &line.To, &line.LineType, &line.CreatedAt); err != nil {
+				log.Printf("There's been an error scanning the line for botid %v %v", bot.ID, err.Error())
+				break
+			}
+
+			bot.Lines = append(bot.Lines, line)
+		}
 	}
 
 	return &bot, nil
@@ -176,6 +238,25 @@ func (dbh *DBHandler) InsertBot(b *models.Bot) (string, error) {
 		log.Printf("There's been an error retrieving result ID." + err.Error())
 		return "error retrieving data", err
 	}
+
+	var successLCount int = 0
+	if b.Lines != nil {
+		for _, line := range b.Lines {
+			_, err := dbh.DB.Exec(`
+				INSERT INTO lines 
+					(bid, phrase, author, toid, ltype, createdat)
+				VALUES 
+					(?, ?, ?, ?, ?, ?)`,
+				lastId, line.Phrase, line.Author, line.To, line.LineType, line.CreatedAt)
+			if err != nil {
+				log.Printf("Error inserting line %v into the database", line)
+			}
+			successLCount++
+
+		}
+	}
+
+	log.Printf("Inserted: %d/%d lines", successLCount, len(b.Lines))
 
 	return fmt.Sprintf("{'status':%v}", strconv.FormatInt(lastId, 10)), err
 }
@@ -452,7 +533,7 @@ func (dbh *DBHandler) DeleteLineByIndentifier(identifier string) (string, error)
 
 	defer dbh.DB.Close()
 
-	res, err := dbh.DB.Exec(`DELETE FROM lines WHERE id = ?`, identifier)
+	res, err := dbh.DB.Exec(`DELETE FROM lines WHERE lineid = ?`, identifier)
 	if err != nil {
 		log.Printf("There's been an error deleting the line with id %v in the DB."+err.Error(), identifier)
 		return "error deleting line", err

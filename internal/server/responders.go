@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
+	"text/template"
 )
 
 type errResponse struct {
@@ -41,6 +43,45 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(data)
+}
+
+func RespondWithHTML(w http.ResponseWriter, code int, html string) {
+	w.Header().Set("content-Type", "text/html")
+	w.WriteHeader(code)
+
+	_, err := w.Write([]byte(html))
+	if err != nil {
+		log.Printf("Failed to write HTML response: %v", err)
+		RespondWithError(w, http.StatusInternalServerError, "Failed to write HTML response")
+	}
+}
+
+func RespondWithTemplate(w http.ResponseWriter, code int, templatePath string, data interface{}) {
+	// Parse the specified template file
+
+	currpath, err := os.Getwd()
+	if err != nil {
+		log.Print("Failed to retrieve current dir path...")
+		RespondWithError(w, http.StatusInternalServerError, "Error getting current directory")
+		return
+	}
+
+	tmpl, err := template.ParseFiles(currpath + templatePath)
+	if err != nil {
+		log.Printf("Failed to parse template: %v", err)
+		RespondWithError(w, http.StatusInternalServerError, "Error parsing template")
+		return
+	}
+
+	// Set the content type to HTML
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(code)
+
+	// Render the template with the provided data
+	if err := tmpl.Execute(w, data); err != nil {
+		log.Printf("Failed to execute template: %v", err)
+		http.Error(w, "Error rendering template", http.StatusInternalServerError)
+	}
 }
 
 func IsAlphanumeric(s string) bool {

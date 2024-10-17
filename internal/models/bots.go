@@ -36,9 +36,6 @@ func (l *Line) VerifyLine() error {
 	if !isValidUTF8String(l.LineType) {
 		return &FieldError{Field: "LineType", Message: "must contain letters, numbers or symbols"}
 	}
-	if !isValidUTF8String(l.CreatedAt) {
-		return &FieldError{Field: "CreatedAt", Message: "must contain letters, numbers or symbols"}
-	}
 
 	return nil
 }
@@ -70,7 +67,7 @@ func (b *Bot) VerifyBot() error {
 
 	for _, l := range b.Lines {
 		if err := l.VerifyLine(); err != nil {
-			return &FieldError{Field: "Lines", Message: "must contain letters, numbers or symbols"}
+			return err
 
 		}
 	}
