@@ -1,4 +1,3 @@
-
 <div id="bots-main-container">
     <div id="bot-selector">
         <!-- Add your bot selector content here -->
@@ -9,12 +8,53 @@
                 <img src="assets/icons/mozart_draw.jpg" class="rotatable-image" draggable="false">
             </div>
             <!-- Dynamically generated spans -->
-            <span style="--i:0;"></span>
-            <span style="--i:1;"></span>
-            <!-- Add more spans as needed -->
+            {{ $total := len . }} <!-- Store the length of the Bots array -->
+            {{ range $index, $bot := . }}
+                <!-- Style each span with a dynamic background color -->
+                <span class="line-divider" style="--i:{{ $index }}; transform: rotate(calc(360deg / {{ $total }} * var(--i)));"></span>
+                <div class="bot-slice" style="--i:{{ $index }}; --total: {{ $total }}; --bg-color: rgba(20+(5*{{ $index }}), 230-(4*{{ $index }}), 70+(4*{{ $index }}), 0.2);">
+                    <div class="bot-text">{{ $bot.Name }}</div>
+                </div>
+            {{ end }}
         </div>
+    </div>
+    <div id="bot-controller-menu">
+        <button onclick="rotateWheel(1)">Rotate Right</button>
+        <button onclick="rotateWheel(-1)">Rotate Left</button>
     </div>
     <div id="bot-content">
         <!-- Bot content -->
+         <p> Test content</p>
     </div>
 </div>
+
+
+<script>
+    let currentRotation = 0;
+    let totalDivisions = {{ len . }}; // You can pass this dynamically based on the number of bots
+    const wheel = document.getElementById("dads-wheel");
+
+    // Function to rotate the wheel
+    function rotateWheel(direction) {
+        const angle = 360 / totalDivisions;
+        currentRotation += angle * direction;
+
+        // Apply the rotation to the wheel
+        wheel.style.transform = `rotate(${currentRotation}deg)`;
+    }
+
+    // Optionally, you could also implement a function to directly select a specific bot by its index:
+    function selectBot(index) {
+        const angle = (360 / totalDivisions) * index;
+        currentRotation = -angle; // Move the desired division into the focus area
+        wheel.style.transform = `rotate(${currentRotation}deg)`;
+    }
+
+    document.querySelectorAll('#dads-wheel span').forEach((span, index) => {
+        span.addEventListener('click', () => {
+            selectBot(index); // Rotate to the clicked division
+        });
+    });
+
+
+</script>

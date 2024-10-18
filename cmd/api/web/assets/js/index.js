@@ -11,7 +11,7 @@ const default_icon = "assets/icons/mozart_draw.jpg";
 function openNav() {
     mainSideBar.style.width = "250px";
     navbtn.style.marginLeft = "20px";
-    togglebtn.innerText = "Less";
+    togglebtn.innerText = "→";
 
     for (let element of sideBarAffectedElements) {
         element.style.marginLeft = '250px'; 
@@ -21,7 +21,7 @@ function openNav() {
 function closeNav() {
     mainSideBar.style.width = "0";
     navbtn.style.marginLeft = "0";
-    togglebtn.innerText = "More";
+    togglebtn.innerText = "←";
 
     for (let element of sideBarAffectedElements) {
         element.style.marginLeft = ''; 

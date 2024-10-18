@@ -121,20 +121,21 @@ func MemberHandler(w http.ResponseWriter, r *http.Request) {
 		RespondWithJSON(w, http.StatusCreated, "Deletion success")
 
 	case http.MethodPost:
-		var newMember models.Member
+		newMember := models.Member{}
 		if err := json.NewDecoder(r.Body).Decode(&newMember); err != nil {
 			// log.Printf("Error decoding JSON: %v", err)
 			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
 			return
 		}
 
-		if _, err := dbh.InsertMember(newMember); err != nil {
+		member, err := dbh.InsertMember(newMember)
+		if err != nil {
 			// log.Printf("Error inserting member %v...: %v", newMember, err.Error())
 			RespondWithError(w, http.StatusBadRequest, "Did not insert the member")
 			return
 		}
 
-		RespondWithJSON(w, http.StatusCreated, newMember)
+		RespondWithJSON(w, http.StatusCreated, member)
 
 	default:
 		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")

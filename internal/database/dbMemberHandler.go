@@ -11,12 +11,12 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func (dbh *DBHandler) InsertMember(u models.Member) (string, error) {
+func (dbh *DBHandler) InsertMember(u models.Member) (*models.Member, error) {
 
 	err := u.VerifyMember()
 	if err != nil {
 		log.Print("Invalid field on Member. ", err.Error())
-		return "0", err
+		return nil, err
 	}
 
 	mu := &dbh.mu
@@ -27,7 +27,7 @@ func (dbh *DBHandler) InsertMember(u models.Member) (string, error) {
 	err = dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error getting the DB handler..." + err.Error())
-		return "all not G bro", err
+		return nil, err
 	}
 	defer dbh.DB.Close()
 
@@ -37,17 +37,18 @@ func (dbh *DBHandler) InsertMember(u models.Member) (string, error) {
 		u.DisplayBanner, u.User_color, u.JoinedAt, u.Status, u.MsgCount)
 	if err != nil {
 		log.Printf("There's been an error inserting the member %v in the DB."+err.Error(), u)
-		return "error inserting member", err
+		return nil, err
 	}
 
 	lastId, err := res.LastInsertId()
 	if err != nil {
 		log.Printf("There's been an error retrieving result ID." + err.Error())
-		return "error retrieving data", err
+		return nil, err
 	}
 
-	// Insert the Roles and Messages now
+	u.ID = int(lastId)
 
+	// Insert the Roles and Messages now
 	var successMCount, successRCount int = 0, 0
 	if u.Messages != nil {
 		for _, msg := range u.Messages {
@@ -73,7 +74,7 @@ func (dbh *DBHandler) InsertMember(u models.Member) (string, error) {
 
 	log.Printf("Inserted %d/%d roles, %d/%d messages.", successRCount, len(u.Roles), successMCount, len(u.Messages))
 
-	return fmt.Sprintf("{'status':%v}", strconv.FormatInt(lastId, 10)), err
+	return &u, err
 }
 
 func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) (string, error) {

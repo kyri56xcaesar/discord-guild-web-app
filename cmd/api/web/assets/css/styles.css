@@ -26,6 +26,14 @@ canvas {
 }
 
 
+img { 
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  }
+
+
+
 
 /* Header */
 .sidebar-affected {
@@ -64,6 +72,7 @@ canvas {
   padding: 14px;
 
   margin-top: 5px;
+  margin-left: 5px;
 }
 
 

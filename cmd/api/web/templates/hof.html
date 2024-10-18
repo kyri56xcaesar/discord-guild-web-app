@@ -57,7 +57,7 @@
                     <p><strong>Message Count:</strong> <span class="msg-count">{{ .Member.MsgCount }}</span></p>
                     <p><strong>Roles:</strong> 
                         {{ range .Member.Roles }}
-                            <span style="color: {{ .Member.Color }};">{{ .Member.Role_name }}</span>
+                            <span style="color: {{ .Color }};">{{ .Role_name }}</span>
                         {{ end }}
                     </p>
                     <p><strong>Joined At:</strong> {{ .Member.JoinedAt }}</p>

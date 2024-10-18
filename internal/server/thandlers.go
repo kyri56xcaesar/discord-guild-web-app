@@ -11,6 +11,19 @@ import (
 
 // Serve bots.html
 func BotsDHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
+
+	dbh := database.GetConnector(DBName)
+	if dbh == nil {
+		RespondWithError(w, http.StatusInternalServerError, "Database connection failed")
+		return
+	}
+	bots, err := dbh.GetAllBots()
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve bots")
+		return
+	}
+
 	tmplPath := filepath.Join("cmd", "api", "web", "templates", "bots.html")
 	tmpl, err := template.ParseFiles(tmplPath)
 	if err != nil {
@@ -18,12 +31,11 @@ func BotsDHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl.Execute(w, nil)
+	tmpl.Execute(w, bots)
 }
 
 // Serve hof.html
 func HofHandler(w http.ResponseWriter, r *http.Request) {
-
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
 	dbh := database.GetConnector(DBName)
@@ -37,6 +49,7 @@ func HofHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Sort members on msg_count
 	sort.Slice(members, func(i, j int) bool {
 		return members[i].MsgCount > members[j].MsgCount
 	})
