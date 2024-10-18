@@ -40,8 +40,10 @@ func (s *Server) routes() {
 	// Root handler for health check
 	s.Router.HandleFunc("/", RootHandler)
 	s.Router.HandleFunc("/healthz", HealthCheck)
-	s.Router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("./cmd/api/web/assets"))))
+	s.Router.HandleFunc("/dbots", BotsDHandler)
+	s.Router.HandleFunc("/hof", HofHandler)
 
+	s.Router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("./cmd/api/web/assets"))))
 	// Subrouter for /guild
 	guildRouter := s.Router.PathPrefix("/guild").Subrouter()
 	guildRouter.HandleFunc("/", GuildHandler).Methods("GET", "POST")

@@ -4,6 +4,9 @@ const sideBarAffectedElements = document.querySelectorAll('.sidebar-affected');
 const mainSideBar = document.getElementById("main-siderbar");
 const navbtn = document.getElementById("navbtn");
 const togglebtn = document.getElementById("togglebtn")
+const guild_name = '$DADS';
+const default_icon = "assets/icons/mozart_draw.jpg";
+
 
 function openNav() {
     mainSideBar.style.width = "250px";
@@ -34,37 +37,37 @@ function toggleNav() {
 }
 
 
-const botsDisplay = document.getElementById("bots-display");
-const servicesDisplay = document.getElementById("hof-display");
-const clientsDisplay = document.getElementById("clients-display");
+// const botsDisplay = document.getElementById("bots-display");
+// const servicesDisplay = document.getElementById("hof-display");
+// const clientsDisplay = document.getElementById("clients-display");
 
-// Main Body display options
-function showClients() {
+// // Main Body display options
+// function showClients() {
 
-    // console.log('Displaying Clients content...')
+//     // console.log('Displaying Clients content...')
 
-    botsDisplay.style.display = "none";
-    servicesDisplay.style.display = "none"
-    clientsDisplay.style.display = "block"
-}
+//     botsDisplay.style.display = "none";
+//     servicesDisplay.style.display = "none"
+//     clientsDisplay.style.display = "block"
+// }
 
-function showHof() {
+// function showHof() {
 
-    // console.log('Displaying Services content...')
+//     // console.log('Displaying Services content...')
     
-    botsDisplay.style.display = "none";
-    servicesDisplay.style.display = "block"
-    clientsDisplay.style.display = "none"
-}
+//     botsDisplay.style.display = "none";
+//     servicesDisplay.style.display = "block"
+//     clientsDisplay.style.display = "none"
+// }
 
-function showMain() {
+// function showMain() {
     
-    // console.log('Displaying main content...')
+//     // console.log('Displaying main content...')
 
-    botsDisplay.style.display = "block";
-    servicesDisplay.style.display = "none"
-    clientsDisplay.style.display = "none"
-}
+//     botsDisplay.style.display = "block";
+//     servicesDisplay.style.display = "none"
+//     clientsDisplay.style.display = "none"
+// }
 
 
 

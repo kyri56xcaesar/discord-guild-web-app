@@ -214,7 +214,6 @@ canvas {
   position: relative;
   /* overflow: auto; */
 
-  display: none;
 }
 
 
@@ -229,13 +228,6 @@ canvas {
   /* overflow: scroll; */
 }
 
-
-
-
-
-#clients-display {
-  display: none;
-}
 
 
 .sticky-body {

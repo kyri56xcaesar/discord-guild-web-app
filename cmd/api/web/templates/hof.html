@@ -1,0 +1,72 @@
+<div id="hof-display"> 
+    <script src="assets/js/hof.js"></script>
+   
+    <canvas id="matrixCanvas"></canvas>
+    <script src="assets/js/matrix_effect.js"></script>
+
+    <div class="hof-content">
+        <div id="hof-header">
+            <!-- animation stop/start toggle button -->
+            <div id="hof-header-left">
+                <div class="header-button" id="matrix-control-button">
+                    <label class="matrix-switch" >
+                        <input id="matrix-switch" type="checkbox" checked="checked">
+                        <div class="matrix-button">
+                            <div class="matrix-light"></div>
+                            <div class="matrix-dots"></div>
+                            <div class="matrix-characters"></div>
+                            <div class="matrix-shine"></div>
+                            <div class="matrix-shadow"></div>
+                        </div>
+                      </label>
+                </div>
+                <div class="header-button" id="hof-title-graphics-button">
+                    <label class="title-effect-switch">
+                        <input id="title-effect-switch" type="checkbox" checked="checked" onclick="toggleTitleAnimation()">
+                        <div class="title-effect-button">
+                            <div class="title-effect-light"></div>
+                            <div class="title-effect-dots"></div>
+                            <div class="title-effect-characters"></div>
+                            <div class="title-effect-shine"></div>
+                            <div class="title-effect-shadow"></div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <h2 id="hof-title" class="fancy-title"></h2>
+            <div id="hof-header-right">
+                <div id="month-fetch-controller">
+
+                </div>
+            </div>
+            <!-- month controller -->
+        </div>
+        <hr>
+        <ol id="hof-list">
+            {{ range . }}
+            <li class="hof-entry" style="background-color: {{ .Member.User_color }};">
+                <div class="hof-entry-left">
+                    <h1>{{ .Index }}.</h1>
+                    <img class="border-color-{{ .Member.Status }}" src="{{ .Member.Avatar }}" alt="avatar" />
+                    <h3>{{ .Member.Username }} <br> ({{ .Member.Nick }})</h3>
+                </div>
+
+                <div style="border-left:1px solid #000;height:250px"></div>
+
+                <div class="hof-entry-right">
+                    <p><strong>Message Count:</strong> <span class="msg-count">{{ .Member.MsgCount }}</span></p>
+                    <p><strong>Roles:</strong> 
+                        {{ range .Member.Roles }}
+                            <span style="color: {{ .Member.Color }};">{{ .Member.Role_name }}</span>
+                        {{ end }}
+                    </p>
+                    <p><strong>Joined At:</strong> {{ .Member.JoinedAt }}</p>
+                    <p><strong>Status:</strong> {{ .Member.Status }} 
+                        <span class="status-light {{ .Member.Status }}"></span>
+                    </p>
+                </div>
+            </li>
+            {{ end }}
+        </ol>
+    </div>
+</div>
