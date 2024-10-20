@@ -21,6 +21,14 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 	RespondWithTemplate(w, http.StatusOK, templatePath, nil)
 }
 
+// GUILD HANDLERS
+func GuildHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
+
+	RespondWithJSON(w, http.StatusFound, "{'guilds'}")
+}
+
+// MEMBERS HANDLERS
 func MembersHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
@@ -173,12 +181,7 @@ func RootMemberHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func GuildHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
-
-	RespondWithJSON(w, http.StatusFound, "{'guilds'}")
-}
-
+// BOTS HANDLERS
 func RootBotHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 	dbh := database.GetConnector(DBName)
@@ -289,6 +292,7 @@ func BotsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// LINES HANDLERS
 func RootLineHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
@@ -384,6 +388,146 @@ func LineHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
+// ROLE HANDLERS
+func RolesHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
+
+	dbh := database.GetConnector(DBName)
+	if dbh == nil {
+		RespondWithError(w, http.StatusInternalServerError, "Database connection failed")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		res, err := dbh.GetAllRoles()
+		if err != nil {
+			RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve roles")
+			return
+		}
+		if res == nil {
+			// If the result is nil, return 404
+			RespondWithError(w, http.StatusNotFound, "Roles not found")
+			return
+		}
+		RespondWithJSON(w, http.StatusOK, res)
+
+	case http.MethodPost:
+		var newRoles []models.Role
+		if err := json.NewDecoder(r.Body).Decode(&newRoles); err != nil {
+			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
+			return
+		}
+		if _, err := dbh.InsertMultipleRoles(newRoles); err != nil {
+			RespondWithError(w, http.StatusInternalServerError, "Failed to insert roles")
+			return
+		}
+
+		RespondWithJSON(w, http.StatusCreated, newRoles)
+
+	default:
+		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
+	}
+
+}
+
+func RoleHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
+
+	vars := mux.Vars(r)
+	identifier := vars["identifier"]
+
+	if !IsAlphanumeric(identifier) {
+		RespondWithError(w, http.StatusBadRequest, "Invalid identifier")
+		return
+	}
+
+	dbh := database.GetConnector(DBName)
+
+	switch r.Method {
+	case http.MethodGet:
+		res, err := dbh.GetRoleByIdentifier(identifier)
+		if err != nil {
+			RespondWithError(w, http.StatusNotFound, "Role not found")
+			return
+		}
+
+		if res == nil {
+			RespondWithError(w, http.StatusNotFound, "Role not found")
+			return
+		}
+		RespondWithJSON(w, http.StatusOK, res)
+
+	case http.MethodPut:
+		var updatedRole models.Role
+		if err := json.NewDecoder(r.Body).Decode(&updatedRole); err != nil {
+			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
+			return
+		}
+
+		if _, err := dbh.UpdateRoleByIdentifier(updatedRole, identifier); err != nil {
+			RespondWithError(w, http.StatusInternalServerError, "Failed to update role")
+			return
+		}
+		RespondWithJSON(w, http.StatusOK, updatedRole)
+
+	case http.MethodDelete:
+		if _, err := dbh.DeleteRoleByIdentifier(identifier); err != nil {
+			RespondWithError(w, http.StatusBadRequest, "Failed to delete role")
+			return
+		}
+		RespondWithJSON(w, http.StatusCreated, "Deletion success")
+
+	case http.MethodPost:
+		newRole := models.Role{}
+		if err := json.NewDecoder(r.Body).Decode(&newRole); err != nil {
+			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
+			return
+		}
+		member, err := dbh.InsertRole(newRole)
+		if err != nil {
+			RespondWithError(w, http.StatusBadRequest, "Did not insert the role")
+			return
+		}
+
+		RespondWithJSON(w, http.StatusCreated, member)
+
+	default:
+		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
+	}
+
+}
+
+func RootRoleHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
+
+	dbh := database.GetConnector(DBName)
+
+	switch r.Method {
+	case http.MethodGet:
+		http.Redirect(w, r, "/guild/roles", http.StatusMovedPermanently)
+
+	case http.MethodPost:
+		var newRole models.Role
+		if err := json.NewDecoder(r.Body).Decode(&newRole); err != nil {
+			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
+			return
+		}
+
+		if _, err := dbh.InsertRole(newRole); err != nil {
+			RespondWithError(w, http.StatusBadRequest, "Failed to insert role")
+			return
+		}
+		RespondWithJSON(w, http.StatusCreated, newRole)
+
+	default:
+		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
+	}
+
+}
+
+// DEFAULT HANDLERS
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	RespondWithError(w, http.StatusNotFound, "Not Found")
 }

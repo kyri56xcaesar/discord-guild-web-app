@@ -37,39 +37,6 @@ function toggleNav() {
 }
 
 
-// const botsDisplay = document.getElementById("bots-display");
-// const servicesDisplay = document.getElementById("hof-display");
-// const clientsDisplay = document.getElementById("clients-display");
-
-// // Main Body display options
-// function showClients() {
-
-//     // console.log('Displaying Clients content...')
-
-//     botsDisplay.style.display = "none";
-//     servicesDisplay.style.display = "none"
-//     clientsDisplay.style.display = "block"
-// }
-
-// function showHof() {
-
-//     // console.log('Displaying Services content...')
-    
-//     botsDisplay.style.display = "none";
-//     servicesDisplay.style.display = "block"
-//     clientsDisplay.style.display = "none"
-// }
-
-// function showMain() {
-    
-//     // console.log('Displaying main content...')
-
-//     botsDisplay.style.display = "block";
-//     servicesDisplay.style.display = "none"
-//     clientsDisplay.style.display = "none"
-// }
-
-
 
 
 

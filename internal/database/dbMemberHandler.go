@@ -417,3 +417,273 @@ func (dbh *DBHandler) UpdateMemberByIdentifier(u models.Member, identifier strin
 
 	return strconv.FormatInt(lastId, 10), nil
 }
+
+func (dbh *DBHandler) InsertRole(r models.Role) (*models.Role, error) {
+
+	err := r.VerifyRole()
+	if err != nil {
+		log.Print("Invalid field on Role. ", err.Error())
+		return nil, err
+	}
+
+	mu := &dbh.mu
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	err = dbh.openConnection()
+	if err != nil {
+		log.Printf("There's been an error getting the DB handler..." + err.Error())
+		return nil, err
+	}
+	defer dbh.DB.Close()
+
+	res, err := dbh.DB.Exec(`INSERT INTO roles (userid, rolename, rolecolor) 
+		VALUES (?, ?, ?)`,
+		r.UID, r.Role_name, r.Color)
+
+	if err != nil {
+		log.Printf("There's been an error inserting the role %v in the DB."+err.Error(), r)
+		return nil, err
+	}
+
+	lastId, err := res.LastInsertId()
+	if err != nil {
+		log.Printf("There's been an error retrieving result ID." + err.Error())
+		return nil, err
+	}
+
+	r.ID = int(lastId)
+
+	return &r, err
+}
+
+func (dbh *DBHandler) InsertMultipleRoles(roles []models.Role) (string, error) {
+
+	mu := &dbh.mu
+	mu.Lock()
+	defer mu.Unlock()
+
+	err := dbh.openConnection()
+	if err != nil {
+		log.Printf("There's been an error creating the DB handler: %v", err)
+		return "Failed to create DB handler", err
+	}
+	defer dbh.DB.Close()
+
+	db := dbh.DB
+
+	// Start a transaction
+	tx, err := db.Begin()
+	if err != nil {
+		log.Printf("Failed to begin transaction: %v", err)
+		return "Failed to begin transaction", err
+	}
+
+	// Prepare the SQL statement for inserting members
+	stmt, err := tx.Prepare(`INSERT INTO roles (userid, rolename, rolecolor) 
+		VALUES (?, ?, ?)`)
+
+	if err != nil {
+		log.Printf("Failed to prepare statement: %v", err)
+		return "Failed to prepare statement", err
+	}
+	defer stmt.Close() // Ensure the statement is closed after use
+
+	successCount := 0
+
+	// Loop through each member and try to insert them
+	for _, r := range roles {
+		// Verify the member's data
+		err = r.VerifyRole()
+		if err != nil {
+			log.Printf("Invalid role %+v: %v (Skipping)", r, err.Error())
+			continue // Skip faulty member and proceed with the next
+		}
+
+		// Execute the insert statement
+		res, err := stmt.Exec(r.UID, r.Role_name, r.Color)
+		if err != nil {
+			log.Printf("Failed to insert role %v: %v", r, err)
+			log.Printf("(Skipping)")
+			continue // Skip faulty member and proceed with the next
+		}
+
+		lastId, err := res.LastInsertId()
+		if err != nil {
+			log.Printf("There's been an error retrieving result ID." + err.Error())
+			break
+		}
+
+		r.ID = int(lastId)
+
+		// Increment the success counter if a row was inserted
+		successCount++
+
+	}
+
+	// Commit the transaction even if some members were skipped
+	if err := tx.Commit(); err != nil {
+		log.Printf("Failed to commit transaction: %v", err)
+		return "Failed to commit transaction", err
+	}
+
+	// Return the number of successful insertions
+	return fmt.Sprintf("Successfully inserted %d roles", successCount), nil
+}
+
+func (dbh *DBHandler) GetAllRoles() ([]*models.Role, error) {
+
+	mu := &dbh.mu
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	err := dbh.openConnection()
+	if err != nil {
+		log.Printf("There's been an error creating the DB handler..." + err.Error())
+		return nil, err
+	}
+
+	defer dbh.DB.Close()
+
+	rows, err := dbh.DB.Query("SELECT * FROM roles")
+	if err != nil {
+		log.Printf("There is been an error retrieving roles from the database." + err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	var roles []*models.Role
+
+	for rows.Next() {
+
+		role := &models.Role{}
+
+		if err := rows.Scan(&role.ID, &role.UID, &role.Role_name, &role.Color); err != nil {
+			log.Printf("There's been an error scanning a role from the database." + err.Error())
+			return nil, err
+		}
+
+		roles = append(roles, role)
+	}
+
+	return roles, nil
+}
+
+func (dbh *DBHandler) GetRoleByIdentifier(identifier string) (*models.Role, error) {
+
+	mu := &dbh.mu
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	err := dbh.openConnection()
+	if err != nil {
+		log.Printf("There's been an error creating the DB handler..." + err.Error())
+		return nil, err
+	}
+
+	defer dbh.DB.Close()
+
+	var row *sql.Row
+
+	if isNumeric(identifier) {
+		row = dbh.DB.QueryRow("SELECT * FROM roles WHERE id = ?", identifier)
+	} else {
+		row = dbh.DB.QueryRow("SELECT * FROM roles WHERE rolename = ?", identifier)
+
+	}
+
+	role := models.Role{}
+
+	if err := row.Scan(&role.ID, &role.UID, &role.Role_name, &role.Color); err != nil {
+		if err == sql.ErrNoRows {
+			log.Printf("Role not found: %v", identifier)
+			return nil, nil
+		}
+		log.Printf("Error scanning role from the row: %v", err)
+		return nil, err
+	}
+
+	return &role, nil
+}
+
+func (dbh *DBHandler) DeleteRoleByIdentifier(identifier string) (string, error) {
+
+	mu := &dbh.mu
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	err := dbh.openConnection()
+	if err != nil {
+		log.Printf("There's been an error creating the DB handler..." + err.Error())
+		return "all not G bro", err
+	}
+
+	defer dbh.DB.Close()
+
+	var res sql.Result
+
+	if isNumeric(identifier) {
+
+		res, err = dbh.DB.Exec(`DELETE FROM roles WHERE id = ?`, identifier)
+	} else {
+		res, err = dbh.DB.Exec(`DELETE FROM roles WHERE rolename = ?`, identifier)
+
+	}
+
+	if err != nil {
+		log.Printf("There's been an error deleting the role with id %v in the DB. "+err.Error(), identifier)
+		return "error deleting role", err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		log.Printf("There's been an error retrieving result ID." + err.Error())
+		return "error retrieving data", err
+	}
+
+	return strconv.FormatInt(rowsAffected, 10), nil
+}
+
+func (dbh *DBHandler) UpdateRoleByIdentifier(r models.Role, identifier string) (string, error) {
+
+	mu := &dbh.mu
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	err := dbh.openConnection()
+	if err != nil {
+		log.Printf("There's been an error creating the DB handler..." + err.Error())
+		return "all not G bro", err
+	}
+
+	defer dbh.DB.Close()
+
+	var res sql.Result
+
+	if isNumeric(identifier) {
+		res, err = dbh.DB.Exec(`UPDATE role SET userid = ?, rolename = ?, rolecolor = ? WHERE id = ?`,
+			r.UID, r.Role_name, r.Color, identifier)
+	} else {
+		res, err = dbh.DB.Exec(`UPDATE role SET userid = ?, rolename = ?, rolecolor = ? WHERE rolename = ?`,
+			r.UID, r.Role_name, r.Color, identifier)
+
+	}
+
+	if err != nil {
+		log.Printf("There's been an error updating the role %v in the DB."+err.Error(), r)
+		return "error updating role", err
+	}
+
+	lastId, err := res.LastInsertId()
+	if err != nil {
+		log.Printf("There's been an error retrieving result ID." + err.Error())
+		return "error retrieving data", err
+	}
+
+	return strconv.FormatInt(lastId, 10), nil
+}

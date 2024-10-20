@@ -48,6 +48,7 @@ func (s *Server) routes() {
 	guildRouter.HandleFunc("/members", MembersHandler).Methods("GET", "POST")
 	guildRouter.HandleFunc("/bots", BotsHandler).Methods("GET", "POST")
 	guildRouter.HandleFunc("/lines", RootLineHandler).Methods("GET", "POST")
+	guildRouter.HandleFunc("/roles", RolesHandler).Methods("GET", "POST")
 
 	membersRouter := guildRouter.PathPrefix("/member").Subrouter()
 	membersRouter.HandleFunc("/", RootMemberHandler).Methods("GET", "POST")
@@ -60,6 +61,10 @@ func (s *Server) routes() {
 	lineRouter := guildRouter.PathPrefix("/line").Subrouter()
 	lineRouter.HandleFunc("/", RootLineHandler).Methods("GET", "POST")
 	lineRouter.HandleFunc("/{identifier:[0-9]+}/", LineHandler).Methods("GET", "PUT", "DELETE")
+
+	roleRouter := guildRouter.PathPrefix("/role").Subrouter()
+	roleRouter.HandleFunc("/", RootRoleHandler).Methods("GET", "POST")
+	roleRouter.HandleFunc("/{identifier}/", RoleHandler).Methods("GET", "PUT", "DELETE")
 
 	s.Router.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	s.Router.MethodNotAllowedHandler = http.HandlerFunc(notAllowedHandler)
@@ -106,8 +111,6 @@ func (s *Server) Start() {
 	// Set up a buffered channel for signals
 	sig := make(chan os.Signal, 10)
 	signal.Notify(sig, os.Interrupt)
-
-	// Mutex and timestamp for throttling server restarts
 
 	for {
 		select {

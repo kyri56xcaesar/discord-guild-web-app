@@ -32,6 +32,17 @@ type Message struct {
 	CreatedAt string `json:"createdat"`
 }
 
+func (role *Role) VerifyRole() error {
+	if !isValidUTF8String(role.Role_name) {
+		return &FieldError{Field: "Role_name", Message: "must contain letters, numbers or symbols"}
+	}
+
+	// 	if !isValidColor(role.Color) {
+	// 		return &FieldError{Field: "Color", Message: "must contain color representation"}
+	// 	}
+	return nil
+}
+
 func (msg *Message) VerifyMessage() error {
 	if !isValidUTF8String(msg.Content) {
 		return &FieldError{Field: "Content", Message: "must contain letters, numbers or symbols"}

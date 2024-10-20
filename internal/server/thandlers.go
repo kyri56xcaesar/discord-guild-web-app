@@ -2,12 +2,22 @@ package server
 
 import (
 	"html/template"
-	"kyri56xcaesar/discord_bots_app/internal/database"
 	"log"
 	"net/http"
 	"path/filepath"
 	"sort"
+
+	"kyri56xcaesar/discord_bots_app/internal/database"
 )
+
+var funcMap = template.FuncMap{
+	"inc": func(i int) int {
+		return i + 1
+	},
+	"dec": func(i int) int {
+		return i - 1
+	},
+}
 
 // Serve bots.html
 func BotsDHandler(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +41,11 @@ func BotsDHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl.Execute(w, bots)
+	err = tmpl.Execute(w, bots)
+	if err != nil {
+		log.Printf("Error executing template: %v", err)
+		RespondWithError(w, http.StatusInternalServerError, "Error executing template")
+	}
 }
 
 // Serve hof.html
@@ -40,11 +54,13 @@ func HofHandler(w http.ResponseWriter, r *http.Request) {
 
 	dbh := database.GetConnector(DBName)
 	if dbh == nil {
+		log.Print("Error on database connection")
 		RespondWithError(w, http.StatusInternalServerError, "Database connection failed")
 		return
 	}
 	members, err := dbh.GetAllMembers()
 	if err != nil {
+		log.Print("Failed to retrieve members")
 		RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve members")
 		return
 	}
@@ -54,25 +70,24 @@ func HofHandler(w http.ResponseWriter, r *http.Request) {
 		return members[i].MsgCount > members[j].MsgCount
 	})
 
-	// Create a slice of maps with index and member data
-	rankedMembers := make([]map[string]interface{}, len(members))
-	for i, member := range members {
-		rankedMembers[i] = map[string]interface{}{
-			"Index":  i + 1, // 1-based index
-			"Member": member,
-		}
+	opacity := "40"
+
+	for _, v := range members {
+		v.User_color += opacity
 	}
 
 	tmplPath := filepath.Join("cmd", "api", "web", "templates", "hof.html")
-	tmpl, err := template.ParseFiles(tmplPath)
+	tmpl, err := template.New("hof.html").Funcs(funcMap).ParseFiles(tmplPath)
 	if err != nil {
-		http.Error(w, "Error loading template", http.StatusInternalServerError)
+		log.Print("Error loading template. " + err.Error())
+		RespondWithError(w, http.StatusInternalServerError, "Error loading template")
 		return
 	}
 
-	err = tmpl.Execute(w, rankedMembers)
+	err = tmpl.Execute(w, members)
 	if err != nil {
 		log.Printf("Error executing template: %v", err)
+		RespondWithError(w, http.StatusInternalServerError, "Error executing template")
 	}
 }
 
