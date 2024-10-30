@@ -4,6 +4,7 @@ import requests
 import asyncio
 import logging
 from dotenv import dotenv_values
+from discord import app_commands
 from discord.ext import commands, tasks
 from datetime import datetime, timedelta
 
@@ -42,31 +43,39 @@ def int_to_hex_color(integer_value):
 async def on_ready():
     logger.info(f'Logged in as {bot.user}')
     # Start the server in a background task
+    try:
+        synced = await bot.tree.sync()
+        logger.info(f"Synced {len(synced)} command(s)")
+    except Exception as e:
+        logger.error(f"Failed to sync {e}")
     await bot.loop.create_task(server_thread())
 
 
 
 # # # COMMANDS # # # 
 # Bot command to manually trigger data gathering and forwarding
-@bot.command(name="gather")
-async def gather_command(ctx, monthOffset: int = 1):
+@bot.tree.command(name="gather")
+@app_commands.describe(months="How many months?")
+async def gather_command(interaction: discord.Interaction, months: str):
     try:
-        logger.info(f"Gather command invoked with monthOffset: {monthOffset}")
-        data = await gatherData(verbose=True, monthOffset=monthOffset)
-        await ctx.send(f"Gathered data for {monthOffset} months.")
+        await interaction.response.send_message(f"{interaction.user.name} said: `{months}`")
+        logger.info(f"Gather command invoked with monthOffset: {months}")
+        data = await gatherData(verbose=True, monthOffset=int(months))
+        # logger.info(f"Data gathered:  {data }")
+        logger.info(f"Gathered data for {months} months.")
         # Optionally forward data here
         response = await forwardData(data, URL)
-        await ctx.send(f"Data forwarded. Response: {response.status_code}")
+        logger.info(f"Data forwarded. Response: {response.status_code}")
     except Exception as e:
         logger.error(f"Error in gather_command: {e}", exc_info=True)
-        await ctx.send("An error occurred while gathering data.")
+        logger.error("An error occurred while gathering data.")
 
 # If you want the bot to have a periodic task, you can set up a loop:
-@tasks.loop(hours=24)
-async def periodic_data_collection():
-    data = await gatherData(verbose=False, monthOffset=1)
-    response = await forwardData(data, URL)
-    print(f"Data collected and forwarded. Status: {response.status_code}")
+# @tasks.loop(hours=24)
+# async def periodic_data_collection():
+#     data = await gatherData(verbose=False, monthOffset=1)
+#     response = await forwardData(data, URL)
+#     logger.info(f"Data collected and forwarded. Status: {response.status_code}")
 
 
 
@@ -81,7 +90,7 @@ async def forwardData(data, url):
         'user-agent': 'my_discord_app/0.0.1',
         'content-type': 'application/json; charset=utf-8'
     }
-    response = requests.post(url=url, headers=headers, data=json.dumps(data, ensure_ascii=False).encode('utf-8'))
+    response = requests.post(url=url, headers=headers, data=json.dumps(data, ensure_ascii=False, indent=4, sort_keys=True, default=str).encode('utf-8'))
     return response
 
 
@@ -109,7 +118,7 @@ async def gatherData(verbose=True, monthOffset=-1):
                     'displayavatarurl': str(member.display_avatar),
                     'bannerurl': member.banner.url if member.banner is not None else 'None',
                     'usercolor': str(int_to_hex_color(member.color.value)).upper(),
-                    'joinedat': str(member.joined_at),
+                    'joinedat': str(member.joined_at.strftime('%Y-%m-%d')),
                     'userstatus': member.raw_status,
                     'userroles': [{'role_name': role.name, 'role_color': str(int_to_hex_color(role.color.value).upper())} for role in member.roles],
                     'usermessages': list(),
@@ -123,7 +132,7 @@ async def gatherData(verbose=True, monthOffset=-1):
                     'userguild': guild.name,
                     'username': member.name,
                     'avatarurl': str(member.avatar),
-                    'joinedat': str(member.joined_at),
+                    'joinedat': str(member.joined_at.strftime('%Y-%m-%d')),
                     'userstatus': member.raw_status,
                     'userroles': [{'role_name': role.name, 'role_color': str(int_to_hex_color(role.color.value).upper())} for role in member.roles],
                     'usermessages': list(),
@@ -157,23 +166,42 @@ async def gatherData(verbose=True, monthOffset=-1):
 # # # SERVER # # #
 async def handle_client(reader, writer):
     logger.info("Client connected")
-    try: 
-        data = await reader.read(1024)
-        signal = data.decode('utf-8')
+    try:
+        while True:
+            data = await reader.readline()
+            if not data:
+                # client here
+                break
+            if len(data) > 2048:
+                response = "Error: Message too long."
+                writer.write((response + '\n').encode('utf-8'))
+                await writer.drain()
+                continue  
+            signal = data.decode('utf-8').strip()
+            logger.info(f"Received signal: {signal}")
 
-        logger.info(f"Received signal: {signal}")
+            if signal == 'gather':
+                data = await gatherData(verbose=False, monthOffset=1)
+                response_data = json.dumps(data)
+                writer.write((response_data + '\n').encode('utf-8'))
+                await writer.drain()
+                logger.info("Data sent back to client.")
 
-        if signal == 'gather':
-            data = await gatherData(verbose=False, monthOffset=1)
-            logger.info(data)
-            #response_data = json.dumps(data).encode('utf-8')
-            #logger.info(response_data)
-            logger.info("Data sent back to client.")
+            elif signal == 'check':
+                response = "I am here!"
+                writer.write((response + '\n').encode('utf-8'))
+                await writer.drain()
+                logger.info("Sent 'I am here!' response.")
 
-        elif signal == 'check':
-            writer.write("I am here!".encode('utf-8'))
-            await writer.drain()
-            logger.info("Sent 'I am here!' response.")
+            elif signal == 'exit':
+                logger.info("Client requested to close the connection.")
+                break  
+
+            else:
+                response = "Unknown command."
+                writer.write((response + '\n').encode('utf-8'))
+                await writer.drain()
+                logger.info("Sent 'Unknown command' response.")
 
     except Exception as e:
         logger.error(f"An error occurred: {e}", exc_info=True)
@@ -182,7 +210,7 @@ async def handle_client(reader, writer):
         await writer.wait_closed()
         logger.info("Client connection closed.")
 
-
+        
 async def server_thread():
     lport = int(config['LPORT'])  # Convert port to integer
 
@@ -203,9 +231,4 @@ async def server_thread():
 if __name__ == "__main__":
     token = config['snake_bot_token']
     bot.run(token)
-
-
-
-
-
 
