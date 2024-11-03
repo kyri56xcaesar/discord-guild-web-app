@@ -18,20 +18,53 @@ import (
 )
 
 type Server struct {
+  serverID  int
 	Router   *mux.Router
 	ConfPath string //sqlite .db filepath
 }
 
-func NewServer(conf string) *Server {
-	server := &Server{
-		Router:   mux.NewRouter(),
-		ConfPath: conf,
-	}
+type ServerError struct{}
 
+func (serror *ServerError) Error() string {
+    return "server error"
+}
+
+// there should be a limit to the amount of servers possible
+const MAX_SERVERS int = 100
+
+// Server pool
+var serverPool [MAX_SERVERS]Server
+var currentIndex int = 0
+var CurrentServer *Server
+var DBName string
+
+var poolMutex sync.Mutex
+
+func NewServer(conf string) (*Server, error) {
+
+  poolMutex.Lock()
+  defer poolMutex.Unlock()
+
+  if currentIndex >= MAX_SERVERS {
+    log.Println("Server pool limit reached. Cannot create more servers. UPDATE MAX SERVERS")
+    return nil, &ServerError{}
+  }
+
+  server := serverPool[currentIndex]
+  
+  server.serverID = currentIndex
+	server.Router = mux.NewRouter()
+	server.ConfPath = conf
 	server.routes()
 
-	return server
+  currentIndex += 1
+
+  log.Printf("Current Server ID: %d", currentIndex)
+
+	return &server, nil
 }
+
+
 
 func (s *Server) routes() {
 
@@ -81,9 +114,12 @@ func (s *Server) Start() {
 	}
 	scriptPath := fmt.Sprintf("%s%s", curpath, database.InitSQLScriptPath)
 
+  // Init database
 	if err = database.InitDB(config.DBfile, scriptPath); err != nil {
 		log.Fatalf("Error during db initialization: %v", err)
 	}
+  // Set database reference
+  DBName = config.DBfile
 
 	//Enable CORS for all routes
 	corsOptions := handlers.CORS(
@@ -131,19 +167,25 @@ func (s *Server) Start() {
 				return
 
 			case syscall.SIGUSR1:
-				go func() {
-					restartMutex.Lock()
-					defer restartMutex.Unlock()
+        go func() {
+          restartMutex.Lock()
+          defer restartMutex.Unlock()
 
-					// Throttle restarts to prevent excessive operations
-					if time.Since(lastRestart) > 5*time.Second {
-						log.Println("Restarting server...")
-						s.restartServer(srv)
-						lastRestart = time.Now()
-					} else {
-						log.Println("Server restart throttled")
-					}
-				}()
+          // Check for a new config path from an environment variable
+          newConfigPath := os.Getenv("NEW_CONFIG_PATH")
+          if newConfigPath != "" {
+            log.Printf("Using new config path: %s", newConfigPath)
+            s.ConfPath = newConfigPath // Update the path if provided
+          }
+
+          // Throttle restarts to prevent excessive operations
+          if time.Since(lastRestart) > 5*time.Second {
+            s.restartServer(srv)
+            lastRestart = time.Now()
+          } else {
+            log.Println("Server restart throttled")
+          }
+        }()
 
 			case syscall.SIGUSR2:
 				go func() {
@@ -173,6 +215,7 @@ func (s *Server) restartServer(srv *http.Server) {
 	}
 	log.Printf("Config file: %+v", config)
 
+  time.Sleep(5 * time.Second)
 	// Restart the server with the same configuration
 	go func() {
 		newSrv := &http.Server{
@@ -190,8 +233,14 @@ func (s *Server) restartServer(srv *http.Server) {
 func (s *Server) runSQLScript(dbpath string) {
 	// Example: Dynamically get the SQL script path from the user
 	var scriptPath string
-	fmt.Print("Enter the path to the SQL initialization script: ")
-	fmt.Scanln(&scriptPath)
+
+  scriptPath = os.Getenv("SQL_SCRIPT_PATH")
+  if scriptPath != "" {
+    log.Printf("Using the script path: %s", scriptPath)
+  } else {
+	  fmt.Print("Enter the path to the SQL initialization script: ")
+	  fmt.Scanln(&scriptPath)
+  }
 
 	// Check if the file exists before proceeding
 	if _, err := os.Stat(scriptPath); os.IsNotExist(err) {

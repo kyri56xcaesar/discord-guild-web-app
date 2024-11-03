@@ -11,8 +11,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-const DBName string = "dads.db"
-
 func RootHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
