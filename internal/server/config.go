@@ -20,7 +20,6 @@ type EnvConfig struct {
 }
 
 func loadConfig(path string) (*EnvConfig, error) {
-
 	if err := godotenv.Load(path); err != nil {
 		return nil, err
 	}

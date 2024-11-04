@@ -7,11 +7,9 @@ import (
 // This will be reconfigured to be able to run multiple servers
 // Argument given
 // Goroutines
-// 
 func main() {
 	server, err := server.NewServer("server.env")
-  if err == nil {
-    server.Start()   
-  }
-
+	if err == nil {
+		server.Start()
+	}
 }
