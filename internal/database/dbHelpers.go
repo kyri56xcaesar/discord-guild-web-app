@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	InitSQLScriptPath string = "/internal/database/db_init.sql"
+	InitSQLScriptPath string = "/internal/database/sqlscripts/db_init.sql"
 	INITsql           string = `
 		CREATE TABLE IF NOT EXISTS roles 
 		(
@@ -87,13 +87,15 @@ func InitDB(dbpath string, initScript string) error {
 	if err != nil {
 		log.Printf("There was an error reading the sql file, will use a default instead...: " + err.Error())
 		log.Print("Running default script...")
-		res, err := dbh.RunSQLscript(INITsql)
-		log.Printf("Result: %v, -> possible error: %v", res, err)
+		_, err = dbh.RunSQLscript(INITsql)
 
 	} else {
 		log.Print("Running script from file...")
-		res, err := dbh.RunSQLscript(string(fileContent))
-		log.Printf("Result: %v, -> possible error: %v", res, err)
+		_, err = dbh.RunSQLscript(string(fileContent))
+		if err != nil {
+			log.Print("Error initializing the database: " + err.Error())
+		}
+
 	}
 
 	// populator_script := "C:\\Users\\kyria\\Documents\\Coding\\Discord Bots\\internal\\database\\populate_current_tables.sql"
@@ -102,7 +104,6 @@ func InitDB(dbpath string, initScript string) error {
 	// log.Printf("Result: %v, -> possible error: %v", res, err)
 
 	return err
-
 }
 
 type DBHandler struct {
@@ -126,7 +127,6 @@ func (dbh *DBHandler) openConnection() error {
 	}
 
 	return nil
-
 }
 
 func (dbh *DBHandler) Close() {
@@ -137,7 +137,6 @@ func (dbh *DBHandler) Close() {
 
 // Should be used to initialize the database table
 func (dbh *DBHandler) RunSQLscript(sql string) (sql.Result, error) {
-
 	dbh.mu.Lock()
 	defer dbh.mu.Unlock()
 
@@ -153,6 +152,13 @@ func (dbh *DBHandler) RunSQLscript(sql string) (sql.Result, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error executing SQL script: %w", err)
 	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Print("Rows affected error: " + err.Error())
+	}
+
+	log.Printf("Rows affected: %v", rowsAffected)
 
 	return result, nil
 }

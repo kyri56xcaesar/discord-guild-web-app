@@ -2,25 +2,25 @@ package models
 
 type Bot struct {
 	Guild     string `json:"botguild"`
-	ID        int    `json:"botid"`
 	Name      string `json:"botname"`
 	Avatar    string `json:"avatarurl"`
 	Banner    string `json:"bannerurl"`
 	CreatedAt string `json:"createdat"`
 	Author    string `json:"author"`
 	Status    string `json:"botstatus"`
-	IsSinger  bool   `json:"isSinger"`
 	Lines     []Line `json:"linewords"`
+	ID        int    `json:"botid"`
+	IsSinger  bool   `json:"isSinger"`
 }
 
 type Line struct {
-	ID        int    `json:"lineid"`
-	BID       int    `json:"bid"`
 	Phrase    string `json:"phrase"`
 	Author    string `json:"author"`
 	To        string `json:"toid"`
 	LineType  string `json:"ltype"`
 	CreatedAt string `json:"createdat"`
+	ID        int    `json:"lineid"`
+	BID       int    `json:"bid"`
 }
 
 func (l *Line) VerifyLine() error {
@@ -68,7 +68,6 @@ func (b *Bot) VerifyBot() error {
 	for _, l := range b.Lines {
 		if err := l.VerifyLine(); err != nil {
 			return err
-
 		}
 	}
 

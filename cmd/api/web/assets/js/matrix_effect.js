@@ -1,3 +1,6 @@
+setTimeout(2000);
+
+
 function createMatrixEffect() {
     let matrixActive = false; // Internal state for the matrix effect
     let intervalID = null;   // Holds the interval ID
@@ -33,6 +36,7 @@ function createMatrixEffect() {
         context.fillStyle = 'rgba(245, 242, 235, 0.085)';
         context.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Letters style
         context.fillStyle = 'rgb(255, 209, 109)';
         context.font = fontSize + 'px monospace';
 

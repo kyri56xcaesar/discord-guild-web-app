@@ -12,7 +12,6 @@ import (
 )
 
 func (dbh *DBHandler) InsertMember(u models.Member) (*models.Member, error) {
-
 	err := u.VerifyMember()
 	if err != nil {
 		log.Print("Invalid field on Member. ", err.Error())
@@ -78,7 +77,6 @@ func (dbh *DBHandler) InsertMember(u models.Member) (*models.Member, error) {
 }
 
 func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) (string, error) {
-
 	mu := &dbh.mu
 	mu.Lock()
 	defer mu.Unlock()
@@ -102,7 +100,6 @@ func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) (string, er
 	// Prepare the SQL statement for inserting members
 	stmt, err := tx.Prepare(`INSERT INTO members (guild, username, nickname, avatarurl, displayavatarurl, bannerurl, displaybannerurl, usercolor, joinedat, userstatus, msgcount) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-
 	if err != nil {
 		log.Printf("Failed to prepare statement: %v", err)
 		return "Failed to prepare statement", err
@@ -173,7 +170,6 @@ func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) (string, er
 }
 
 func (dbh *DBHandler) GetAllMembers() ([]*models.Member, error) {
-
 	mu := &dbh.mu
 
 	mu.Lock()
@@ -261,8 +257,57 @@ func (dbh *DBHandler) GetAllMembers() ([]*models.Member, error) {
 	return members, nil
 }
 
-func (dbh *DBHandler) GetMemberByIdentifier(identifier string) (*models.Member, error) {
+func (dbh *DBHandler) GetMemberIdentifiers(identifier string) ([]string, error) {
+	mu := &dbh.mu
+	mu.Lock()
+	defer mu.Unlock()
 
+	err := dbh.openConnection()
+	if err != nil {
+		log.Print("There's been an error getting the DB handler! ", err.Error())
+		return nil, err
+	}
+	defer dbh.DB.Close()
+
+	allowedColumns := map[string]bool{
+		"ids":        true,
+		"guilds":     true,
+		"usernames":  true,
+		"nicknames":  true,
+		"avatarurls": true,
+		"usercolors": true,
+		"msgcounts":  true,
+		"joinedats":  true,
+	}
+	if !allowedColumns[identifier] {
+		return nil, fmt.Errorf("invalid identifier name: %s", identifier)
+	}
+
+	ident := identifier[:len(identifier)-1]
+	query := fmt.Sprintf("SELECT %s FROM members", ident)
+
+	rows, err := dbh.DB.Query(query)
+	if err != nil {
+		log.Print("There's been an error retrieving member data. " + err.Error())
+		return nil, err
+	}
+
+	var results []string
+
+	for rows.Next() {
+		var content string
+
+		if err := rows.Scan(&content); err != nil {
+			log.Printf("There's been an error scanning the member data. %v", err)
+			return nil, err
+		}
+
+		results = append(results, content)
+	}
+	return results, nil
+}
+
+func (dbh *DBHandler) GetMemberByIdentifier(identifier string) (*models.Member, error) {
 	mu := &dbh.mu
 
 	mu.Lock()
@@ -282,7 +327,6 @@ func (dbh *DBHandler) GetMemberByIdentifier(identifier string) (*models.Member, 
 		row = dbh.DB.QueryRow("SELECT * FROM members WHERE id = ?", identifier)
 	} else {
 		row = dbh.DB.QueryRow("SELECT * FROM members WHERE username = ?", identifier)
-
 	}
 
 	member := models.Member{}
@@ -334,7 +378,6 @@ func (dbh *DBHandler) GetMemberByIdentifier(identifier string) (*models.Member, 
 }
 
 func (dbh *DBHandler) DeleteMemberByIdentifier(identifier string) (string, error) {
-
 	mu := &dbh.mu
 
 	mu.Lock()
@@ -351,11 +394,9 @@ func (dbh *DBHandler) DeleteMemberByIdentifier(identifier string) (string, error
 	var res sql.Result
 
 	if isNumeric(identifier) {
-
 		res, err = dbh.DB.Exec(`DELETE FROM members WHERE id = ?`, identifier)
 	} else {
 		res, err = dbh.DB.Exec(`DELETE FROM members WHERE username = ?`, identifier)
-
 	}
 
 	if err != nil {
@@ -372,8 +413,61 @@ func (dbh *DBHandler) DeleteMemberByIdentifier(identifier string) (string, error
 	return strconv.FormatInt(rowsAffected, 10), nil
 }
 
-func (dbh *DBHandler) UpdateMemberByIdentifier(u models.Member, identifier string) (string, error) {
+func (dbh *DBHandler) DeleteMultipleMembersByIdentifiers(identifiers []string) (string, error) {
+	mu := &dbh.mu
+	mu.Lock()
+	defer mu.Unlock()
 
+	err := dbh.openConnection()
+	if err != nil {
+		log.Printf("There's been an error creating the DB handler... %v", err)
+		return "Error opening DB connection", err
+	}
+	defer dbh.DB.Close()
+
+	tx, err := dbh.DB.Begin()
+	if err != nil {
+		log.Printf("Error starting transaction: %v", err)
+		return "Error starting transaction", err
+	}
+
+	queryID := `DELETE FROM members WHERE id = ?`
+	queryUsername := `DELETE FROM members WHERE username = ?`
+
+	totalDeleted := 0
+	for _, identifier := range identifiers {
+		var res sql.Result
+		if isNumeric(identifier) {
+			res, err = tx.Exec(queryID, identifier)
+		} else {
+			res, err = tx.Exec(queryUsername, identifier)
+		}
+
+		if err != nil {
+			tx.Rollback()
+			log.Printf("Error deleting member with identifier %v: %v", identifier, err)
+			return "Error deleting one or more members", err
+		}
+
+		rowsAffected, err := res.RowsAffected()
+		if err != nil {
+			tx.Rollback()
+			log.Printf("Error retrieving affected rows for identifier %v: %v", identifier, err)
+			return "Error retrieving affected rows", err
+		}
+
+		totalDeleted += int(rowsAffected)
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Printf("Error committing transaction: %v", err)
+		return "Error committing transaction", err
+	}
+
+	return fmt.Sprintf("Successfully deleted %d members", totalDeleted), nil
+}
+
+func (dbh *DBHandler) UpdateMemberByIdentifier(u models.Member, identifier string) (string, error) {
 	mu := &dbh.mu
 
 	mu.Lock()
@@ -401,7 +495,6 @@ func (dbh *DBHandler) UpdateMemberByIdentifier(u models.Member, identifier strin
 		joinedat = ?, userstatus = ?, msgcount = ? WHERE username = ?`,
 			u.Guild, u.ID, u.Username, u.Nick, u.Avatar, u.DisplayBanner, u.Banner,
 			u.DisplayBanner, u.User_color, u.JoinedAt, u.Status, u.MsgCount, identifier)
-
 	}
 
 	if err != nil {

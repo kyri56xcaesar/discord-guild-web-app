@@ -4,11 +4,18 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 
 	"kyri56xcaesar/discord_bots_app/internal/database"
 	"kyri56xcaesar/discord_bots_app/internal/models"
 
 	"github.com/gorilla/mux"
+)
+
+const (
+	typeMember string = "members"
+	typeBot    string = "bots"
+	typeLine   string = "lines"
 )
 
 func RootHandler(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +65,61 @@ func MembersHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
+}
 
+func UDMultipleData(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
+
+	dbh := database.GetConnector(DBName)
+
+	dataT := strings.SplitN(r.URL.String(), "/", 4)[2]
+
+	idsParam := r.URL.Query().Get("ids")
+	if idsParam == "" {
+		RespondWithError(w, http.StatusBadRequest, "Missing 'ids' query parameters")
+		return
+	}
+	identifiers := strings.Split(idsParam, ",")
+
+	var (
+		err     error
+		message string
+	)
+
+	switch dataT {
+	case typeMember:
+		switch r.Method {
+		case http.MethodDelete:
+			message, err = dbh.DeleteMultipleMembersByIdentifiers(identifiers)
+		case http.MethodPut:
+		default:
+
+		}
+	case typeBot:
+		switch r.Method {
+		case http.MethodDelete:
+			message, err = dbh.DeleteMultipleBotsByIdentifiers(identifiers)
+		case http.MethodPut:
+		default:
+
+		}
+	case typeLine:
+		switch r.Method {
+		case http.MethodDelete:
+			message, err = dbh.DeleteMultipleLinesByIdentifiers(identifiers)
+		case http.MethodPut:
+		default:
+
+		}
+	default:
+		// Impossible to reach here!
+	}
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, message)
+		return
+	}
+
+	RespondWithJSON(w, http.StatusOK, message)
 }
 
 func MemberHandler(w http.ResponseWriter, r *http.Request) {
@@ -138,7 +199,60 @@ func MemberHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
+}
 
+func DataHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
+
+	dbh := database.GetConnector(DBName)
+
+	dataT := strings.SplitN(r.URL.String(), "/", 4)[2]
+
+	vars := mux.Vars(r)
+	identifier := vars["identifier"]
+
+	if identifier == "" {
+		log.Print("No identifier")
+		RespondWithError(w, http.StatusBadRequest, "Must provide an Identifier")
+		return
+	}
+
+	switch dataT {
+	case typeMember:
+		data, err := dbh.GetMemberIdentifiers(identifier)
+		if err != nil {
+			log.Printf("Failed to get member data by identifier %v", identifier)
+			RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve data")
+			return
+		}
+
+		RespondWithJSON(w, http.StatusOK, data)
+
+	case typeBot:
+		data, err := dbh.GetBotIdentifiers(identifier)
+		if err != nil {
+			log.Printf("Failed to get bot data by identifier %v", identifier)
+			RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve data")
+			return
+		}
+
+		RespondWithJSON(w, http.StatusOK, data)
+
+	case typeLine:
+		data, err := dbh.GetLineIdentifiers(identifier)
+		if err != nil {
+			log.Printf("Failed to get line data by identifier %v", identifier)
+			RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve data")
+			return
+		}
+
+		RespondWithJSON(w, http.StatusOK, data)
+
+	default:
+		// impossible to reach here
+		log.Print("You've made impossible not possible! Nice!")
+		RespondWithError(w, http.StatusInternalServerError, "Nice!")
+	}
 }
 
 func RootMemberHandler(w http.ResponseWriter, r *http.Request) {
@@ -168,7 +282,6 @@ func RootMemberHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
-
 }
 
 func GuildHandler(w http.ResponseWriter, r *http.Request) {
@@ -203,7 +316,6 @@ func RootBotHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func BotHandler(w http.ResponseWriter, r *http.Request) {
-
 	dbh := database.GetConnector(DBName)
 
 	vars := mux.Vars(r)
@@ -281,6 +393,22 @@ func BotsHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			RespondWithJSON(w, http.StatusCreated, newBots)
 		}
+	case http.MethodDelete:
+		idsParam := r.URL.Query().Get("ids")
+		if idsParam == "" {
+			RespondWithError(w, http.StatusBadRequest, "Missing 'ids' query parameters")
+			return
+		}
+
+		identifiers := strings.Split(idsParam, ",")
+
+		message, err := dbh.DeleteMultipleBotsByIdentifiers(identifiers)
+		if err != nil {
+			RespondWithError(w, http.StatusInternalServerError, message)
+			return
+		}
+
+		RespondWithJSON(w, http.StatusOK, message)
 
 	default:
 		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -322,8 +450,27 @@ func RootLineHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			RespondWithJSON(w, http.StatusCreated, newLines)
 		}
-	}
 
+	case http.MethodDelete:
+		idsParam := r.URL.Query().Get("ids")
+		if idsParam == "" {
+			RespondWithError(w, http.StatusBadRequest, "Missing 'ids' query parameters")
+			return
+		}
+		identifiers := strings.Split(idsParam, ",")
+
+		message, err := dbh.DeleteMultipleLinesByIdentifiers(identifiers)
+		if err != nil {
+			RespondWithError(w, http.StatusInternalServerError, message)
+			return
+		}
+
+		RespondWithJSON(w, http.StatusOK, message)
+
+	default:
+		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
+
+	}
 }
 
 func LineHandler(w http.ResponseWriter, r *http.Request) {
@@ -361,7 +508,7 @@ func LineHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if _, err := dbh.UpdateLineByIndentifier(updatedLine, identifier); err != nil {
+		if _, err := dbh.UpdateLineByIdentifier(updatedLine, identifier); err != nil {
 			log.Printf("Error updating line %v... : %v", identifier, err.Error())
 			RespondWithError(w, http.StatusBadRequest, "Could not update line")
 			return
@@ -370,7 +517,7 @@ func LineHandler(w http.ResponseWriter, r *http.Request) {
 		RespondWithJSON(w, http.StatusOK, updatedLine)
 
 	case http.MethodDelete:
-		if _, err := dbh.DeleteLineByIndentifier(identifier); err != nil {
+		if _, err := dbh.DeleteLineByIdentifier(identifier); err != nil {
 			log.Printf("Error deleting line :%v ...: %v", identifier, err.Error())
 			RespondWithError(w, http.StatusBadRequest, "Could not delete the line")
 			return
@@ -380,8 +527,8 @@ func LineHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
-
 }
+
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	RespondWithError(w, http.StatusNotFound, "Not Found")
 }

@@ -1,11 +1,9 @@
 #!/bin/bash
 
-
 PROCESS_NAME=myapp
 RESTART=false
 SCRIPT_PATH=""
 CONFIG_PATH=""
-
 
 function show_help() {
 
@@ -19,16 +17,21 @@ function show_help() {
   exit 0
 }
 
-
 while getopts ":p:rhs:c:" opt; do
   case $opt in
-    p) PROCESS_NAME="$OPTARG" ;;
-    r) RESTART=true ;;
-    s) SCRIPT_PATH="$OPTARG" ;;
-    c) CONFIG_PATH="$OPTARG" ;; 
-    h) show_help ;;
-    \?) echo "Invalid option: -$OPTARG" >&2; exit 1 ;;
-    :) echo "Option -$OPTARG requires an argument." >&2; exit 1;;
+  p) PROCESS_NAME="$OPTARG" ;;
+  r) RESTART=true ;;
+  s) SCRIPT_PATH="$OPTARG" ;;
+  c) CONFIG_PATH="$OPTARG" ;;
+  h) show_help ;;
+  \?)
+    echo "Invalid option: -$OPTARG" >&2
+    exit 1
+    ;;
+  :)
+    echo "Option -$OPTARG requires an argument." >&2
+    exit 1
+    ;;
   esac
 done
 
@@ -47,12 +50,9 @@ function send_signal() {
   fi
 }
 
-
 echo "Restart: "$RESTART
 echo "Script path: "$SCRIPT_PATH
 echo "Config path: "$CONFIG_PATH
-
-
 
 if $RESTART; then
   if [ -n "$CONFIG_PATH" ]; then
@@ -72,11 +72,11 @@ if [ -n "$SCRIPT_PATH" ]; then
   fi
 
   if [ -n "$SCRIPT_PATH" ]; then
+    echo "Enironment Variable"
     export SQL_SCRIPT_PATH=$SCRIPT_PATH
   fi
 
   send_signal SIGUSR2 "$PID"
-
 
   #cat "$SCRIPT_PATH" | tee /proc/$PID/fd/0
   #echo "SQL script sent to the process"

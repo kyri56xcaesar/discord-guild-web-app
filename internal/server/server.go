@@ -6,7 +6,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
+	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -18,9 +21,9 @@ import (
 )
 
 type Server struct {
-	serverID int
 	Router   *mux.Router
 	ConfPath string // sqlite .db filepath
+	serverID int
 }
 
 type ServerError struct{}
@@ -81,6 +84,14 @@ func (s *Server) routes() {
 	guildRouter.HandleFunc("/members", MembersHandler).Methods("GET", "POST")
 	guildRouter.HandleFunc("/bots", BotsHandler).Methods("GET", "POST")
 	guildRouter.HandleFunc("/lines", RootLineHandler).Methods("GET", "POST")
+
+	guildRouter.HandleFunc("/members/get/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
+	guildRouter.HandleFunc("/bots/get/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
+	guildRouter.HandleFunc("/lines/get/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
+
+	guildRouter.HandleFunc("/members/delete", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
+	guildRouter.HandleFunc("/bots/delete", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
+	guildRouter.HandleFunc("/lines/delete", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
 
 	membersRouter := guildRouter.PathPrefix("/member").Subrouter()
 	membersRouter.HandleFunc("/", RootMemberHandler).Methods("GET", "POST")
@@ -228,23 +239,51 @@ func (s *Server) restartServer(srv *http.Server) {
 // runSQLInitScript allows dynamically running an SQL script
 func (s *Server) runSQLScript(dbpath string) {
 	// Example: Dynamically get the SQL script path from the user
-	var scriptPath string
 
-	scriptPath = os.Getenv("SQL_SCRIPT_PATH")
+	sqlDir := "/internal/database/sqlscripts/"
+	wd, _ := os.Getwd()
+
+	sqlDir = fmt.Sprintf("%s%s", wd, sqlDir)
+
+	scriptPath := os.Getenv("SQL_SCRIPT_PATH")
 	if scriptPath != "" {
 		log.Printf("Using the script path: %s", scriptPath)
 	} else {
-		fmt.Print("Enter the path to the SQL initialization script: ")
+		log.Printf("SQL Env Path empty... prompting...")
+		fmt.Printf("Current dir: %v\n", wd)
+		out, err := exec.Command("ls", "--color=auto", sqlDir).Output()
+		if err != nil {
+			log.Print(err)
+		}
+		fmt.Printf("Avaliable scripts:\n%s\n", string(out))
+
+		contents := strings.Split(string(out), "\n")
+		for index, content := range contents {
+			if strings.HasSuffix(content, ".sql") {
+				fmt.Printf("%d.  %s\n", index+1, content)
+			}
+		}
+		fmt.Print("\n\nEnter the SQL script[name/index]: ")
 		fmt.Scanln(&scriptPath)
+		index, err := strconv.Atoi(scriptPath)
+		if err == nil {
+			if index >= 1 && index <= len(contents) {
+				scriptPath = contents[index-1]
+			}
+		}
+
+		log.Printf("Script chosen: %s", scriptPath)
+
 	}
 
+	absPath := fmt.Sprintf("%s%s", sqlDir, scriptPath)
 	// Check if the file exists before proceeding
-	if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
-		log.Printf("SQL script not found at path: %s", scriptPath)
+	if _, err := os.Stat(absPath); os.IsNotExist(err) {
+		log.Printf("SQL script not found at path: %s", absPath)
 		return
 	}
 
-	if err := database.InitDB(dbpath, scriptPath); err != nil {
+	if err := database.InitDB(dbpath, absPath); err != nil {
 		log.Printf("Error running SQL init script: %v", err)
 		return
 	}

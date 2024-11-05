@@ -2,7 +2,6 @@ package models
 
 type Member struct {
 	Guild         string    `json:"userguild"`
-	ID            int       `json:"userid"`
 	Username      string    `json:"username"`
 	Nick          string    `json:"nickname"`
 	Avatar        string    `json:"avatarurl"`
@@ -15,21 +14,22 @@ type Member struct {
 	Roles         []Role    `json:"userroles"`
 	Messages      []Message `json:"usermessages"`
 	MsgCount      int       `json:"messagecount"`
+	ID            int       `json:"userid"`
 }
 
 type Role struct {
-	ID        int    `json:"id"`
-	UID       int    `json:"userid"`
 	Role_name string `json:"rolename"`
 	Color     string `json:"rolecolor"`
+	ID        int    `json:"id"`
+	UID       int    `json:"userid"`
 }
 
 type Message struct {
-	ID        int    `json:"messageid"`
-	UID       int    `json:"userid"`
 	Content   string `json:"content"`
 	Channel   string `json:"channel"`
 	CreatedAt string `json:"createdat"`
+	ID        int    `json:"messageid"`
+	UID       int    `json:"userid"`
 }
 
 func (msg *Message) VerifyMessage() error {
@@ -82,7 +82,6 @@ func (m *Member) VerifyMember() error {
 	for _, message := range m.Messages {
 		if !isValidUTF8String(message.Content) {
 			return &FieldError{Field: "Message", Message: "must contain letters, numbers or symbols"}
-
 		}
 	}
 
