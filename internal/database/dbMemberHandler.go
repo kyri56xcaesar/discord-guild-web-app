@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 
 	"kyri56xcaesar/discord_bots_app/internal/models"
 
 	_ "modernc.org/sqlite"
 )
 
+// Members
 func (dbh *DBHandler) InsertMember(u models.Member) (*models.Member, error) {
 	err := u.VerifyMember()
 	if err != nil {
@@ -257,6 +259,95 @@ func (dbh *DBHandler) GetAllMembers() ([]*models.Member, error) {
 	return members, nil
 }
 
+func (dbh *DBHandler) GetMultipleMembersByIdentifiers(identifiers []string) ([]*models.Member, error) {
+	mu := &dbh.mu
+	mu.Lock()
+	defer mu.Unlock()
+
+	err := dbh.openConnection()
+	if err != nil {
+		log.Printf("There's been an error creating the DB handler..." + err.Error())
+		return nil, err
+	}
+	defer dbh.DB.Close()
+
+	query := "SELECT * FROM members WHERE userid IN (?" + strings.Repeat(",?", len(identifiers)-1) + ")"
+
+	// Execute the query with the provided identifiers
+	rows, err := dbh.DB.Query(query, interfaceSlice(identifiers))
+	if err != nil {
+		log.Printf("Error retrieving members from the database: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var members []*models.Member
+	memberMap := make(map[int]*models.Member)
+
+	for rows.Next() {
+
+		member := &models.Member{}
+
+		if err := rows.Scan(&member.ID, &member.Guild, &member.Username, &member.Nick,
+			&member.Avatar, &member.DisplayAvatar,
+			&member.Banner, &member.DisplayBanner,
+			&member.User_color, &member.JoinedAt,
+			&member.Status, &member.MsgCount); err != nil {
+			log.Printf("There's been an error scanning a user from the database." + err.Error())
+			return nil, err
+		}
+
+		member.Roles = []models.Role{}
+		member.Messages = []models.Message{}
+		members = append(members, member)
+		memberMap[member.ID] = member
+	}
+
+	rrows, err := dbh.DB.Query("SELECT * FROM roles")
+	if err != nil {
+		log.Print("There is been an error retrieving roles with from the database. " + err.Error())
+		return nil, err
+	}
+	defer rrows.Close()
+
+	for rrows.Next() {
+		var role models.Role
+
+		if err := rrows.Scan(&role.ID, &role.UID, &role.Role_name, &role.Color); err != nil {
+			log.Print("There's been an error scanning user roles from the database " + err.Error())
+			return nil, err
+		}
+
+		if member, exists := memberMap[role.UID]; exists {
+			member.Roles = append(member.Roles, role)
+		}
+
+	}
+
+	mrows, err := dbh.DB.Query("SELECT * FROM messages")
+	if err != nil {
+		log.Print("There is been an error retrieving messages from the database. ", err.Error())
+		return nil, err
+	}
+	defer mrows.Close()
+
+	for mrows.Next() {
+		var message models.Message
+
+		if err := mrows.Scan(&message.ID, &message.UID, &message.Content, &message.Channel, &message.CreatedAt); err != nil {
+			log.Print("There's been an error scanning user messages from the database " + err.Error())
+			return nil, err
+		}
+
+		if member, exists := memberMap[message.UID]; exists {
+			member.Messages = append(member.Messages, message)
+		}
+
+	}
+
+	return members, nil
+}
+
 func (dbh *DBHandler) GetMemberIdentifiers(identifier string) ([]string, error) {
 	mu := &dbh.mu
 	mu.Lock()
@@ -269,17 +360,7 @@ func (dbh *DBHandler) GetMemberIdentifiers(identifier string) ([]string, error) 
 	}
 	defer dbh.DB.Close()
 
-	allowedColumns := map[string]bool{
-		"ids":        true,
-		"guilds":     true,
-		"usernames":  true,
-		"nicknames":  true,
-		"avatarurls": true,
-		"usercolors": true,
-		"msgcounts":  true,
-		"joinedats":  true,
-	}
-	if !allowedColumns[identifier] {
+	if !AllowedMemberCols[identifier] {
 		return nil, fmt.Errorf("invalid identifier name: %s", identifier)
 	}
 

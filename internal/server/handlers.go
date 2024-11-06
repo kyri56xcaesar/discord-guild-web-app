@@ -67,6 +67,51 @@ func MembersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func GMultipleData(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
+
+	dbh := database.GetConnector(DBName)
+
+	dataT := strings.SplitN(r.URL.String(), "/", 4)[2]
+
+	idsParam := r.URL.Query().Get("ids")
+	if idsParam == "" {
+		RespondWithError(w, http.StatusBadRequest, "Must provide identifiers")
+		return
+	}
+	identifiers := strings.Split(idsParam, ",")
+
+	switch dataT {
+	case typeMember:
+		members, err := dbh.GetMultipleMembersByIdentifiers(identifiers)
+		if err != nil {
+			log.Printf("Error getting multiple %v. : %v", dataT, err)
+			RespondWithError(w, http.StatusInternalServerError, "Error getting data")
+			return
+		}
+		RespondWithJSON(w, http.StatusOK, members)
+	case typeBot:
+		bots, err := dbh.GetMultipleBotsByIdentifiers(identifiers)
+		if err != nil {
+			log.Printf("Error getting multiple %v. : %v", dataT, err)
+			RespondWithError(w, http.StatusInternalServerError, "Error getting data")
+			return
+		}
+		RespondWithJSON(w, http.StatusOK, bots)
+	case typeLine:
+		lines, err := dbh.GetMultipleLinesByIdentifiers(identifiers)
+		if err != nil {
+			log.Printf("Error getting multiple %v. : %v", dataT, err)
+			RespondWithError(w, http.StatusInternalServerError, "Error getting data")
+			return
+		}
+		RespondWithJSON(w, http.StatusOK, lines)
+	default:
+		// Creazy to be here
+		RespondWithError(w, http.StatusInternalServerError, "Wierd error")
+	}
+}
+
 func UDMultipleData(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
@@ -198,6 +243,25 @@ func MemberHandler(w http.ResponseWriter, r *http.Request) {
 
 	default:
 		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
+	}
+}
+
+func DataIndexHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
+
+	dataT := strings.SplitN(r.URL.String(), "/", 4)[2]
+
+	switch dataT {
+	case typeMember:
+
+		RespondWithJSON(w, http.StatusOK, keysSliceFromMap(database.AllowedMemberCols))
+	case typeBot:
+		RespondWithJSON(w, http.StatusOK, keysSliceFromMap(database.AllowedBotCols))
+	case typeLine:
+		RespondWithJSON(w, http.StatusOK, keysSliceFromMap(database.AllowedLineCols))
+	default:
+		// Shouldnt reach here...
+		RespondWithError(w, http.StatusInternalServerError, "Wierd Error.")
 	}
 }
 
@@ -393,23 +457,6 @@ func BotsHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			RespondWithJSON(w, http.StatusCreated, newBots)
 		}
-	case http.MethodDelete:
-		idsParam := r.URL.Query().Get("ids")
-		if idsParam == "" {
-			RespondWithError(w, http.StatusBadRequest, "Missing 'ids' query parameters")
-			return
-		}
-
-		identifiers := strings.Split(idsParam, ",")
-
-		message, err := dbh.DeleteMultipleBotsByIdentifiers(identifiers)
-		if err != nil {
-			RespondWithError(w, http.StatusInternalServerError, message)
-			return
-		}
-
-		RespondWithJSON(w, http.StatusOK, message)
-
 	default:
 		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
@@ -450,22 +497,6 @@ func RootLineHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			RespondWithJSON(w, http.StatusCreated, newLines)
 		}
-
-	case http.MethodDelete:
-		idsParam := r.URL.Query().Get("ids")
-		if idsParam == "" {
-			RespondWithError(w, http.StatusBadRequest, "Missing 'ids' query parameters")
-			return
-		}
-		identifiers := strings.Split(idsParam, ",")
-
-		message, err := dbh.DeleteMultipleLinesByIdentifiers(identifiers)
-		if err != nil {
-			RespondWithError(w, http.StatusInternalServerError, message)
-			return
-		}
-
-		RespondWithJSON(w, http.StatusOK, message)
 
 	default:
 		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")

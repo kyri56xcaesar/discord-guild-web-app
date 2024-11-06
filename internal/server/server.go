@@ -85,6 +85,14 @@ func (s *Server) routes() {
 	guildRouter.HandleFunc("/bots", BotsHandler).Methods("GET", "POST")
 	guildRouter.HandleFunc("/lines", RootLineHandler).Methods("GET", "POST")
 
+	guildRouter.HandleFunc("/members/data", DataIndexHandler).Methods("GET")
+	guildRouter.HandleFunc("/bots/data", DataIndexHandler).Methods("GET")
+	guildRouter.HandleFunc("/lines/data", DataIndexHandler).Methods("GET")
+
+	guildRouter.HandleFunc("/members/get", GMultipleData).Methods("GET")
+	guildRouter.HandleFunc("/bots/get", GMultipleData).Methods("GET")
+	guildRouter.HandleFunc("/lines/get", GMultipleData).Methods("GET")
+
 	guildRouter.HandleFunc("/members/get/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
 	guildRouter.HandleFunc("/bots/get/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
 	guildRouter.HandleFunc("/lines/get/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")

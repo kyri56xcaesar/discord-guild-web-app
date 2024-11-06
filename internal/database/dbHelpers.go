@@ -9,6 +9,7 @@ import (
 	"sync"
 )
 
+// Helpers
 const (
 	InitSQLScriptPath string = "/internal/database/sqlscripts/db_init.sql"
 	INITsql           string = `
@@ -67,6 +68,36 @@ CREATE TABLE IF NOT EXISTS lines (
 	foreign key (bid) references bots (botid)
 );
 `
+)
+
+var (
+	AllowedMemberCols = map[string]bool{
+		// Members
+		"ids":        true,
+		"guilds":     true,
+		"usernames":  true,
+		"nicknames":  true,
+		"avatarurls": true,
+		"usercolors": true,
+		"msgcounts":  true,
+		"joinedats":  true,
+	}
+
+	AllowedBotCols = map[string]bool{
+		// Bots
+		"botids":   true,
+		"botnames": true,
+		"authors":  true,
+	}
+
+	AllowedLineCols = map[string]bool{
+		// Lines
+		"lineids": true,
+		"toids":   true,
+		"bids":    true,
+		"phrases": true,
+		"ltypes":  true,
+	}
 )
 
 // sqlite path db file
@@ -302,4 +333,12 @@ func DBHealthCheck(dbpath string) *SchemaInfo {
 func isNumeric(s string) bool {
 	re := regexp.MustCompile(`^[0-9]+$`)
 	return re.MatchString(s)
+}
+
+func interfaceSlice(slice []string) []interface{} {
+	interfaces := make([]interface{}, len(slice))
+	for i, v := range slice {
+		interfaces[i] = v
+	}
+	return interfaces
 }
