@@ -13,8 +13,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
                     handlers=[logging.FileHandler("bot.log"), logging.StreamHandler()])
 logger = logging.getLogger(__name__)
 
-# Set up intents
 
+# constants
+MAIN_GUILD_ID=config['$dads_guild_id']
+MC_DISPLAY_ID=config['member_count_channel_id']
 
 # Create bot instance with command prefix '!' and intents
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
@@ -46,10 +48,40 @@ async def on_ready():
     try:
         synced = await bot.tree.sync()
         logger.info(f"Synced {len(synced)} command(s)")
+        await update_member_count(guild_id=MAIN_GUILD_ID, channel_id=MC_DISPLAY_ID)
     except Exception as e:
         logger.error(f"Failed to sync {e}")
     await bot.loop.create_task(server_thread())
+    
+    
+async def update_member_count(guild_id, channel_id):
+    
+    guild = bot.get_guild(guild_id)
+    if not guild:
+        return
+    
+    member_count = guild.member_count
+        
+    logging.info(f"Member count is: {member_count}")
+    channel = bot.get_channel(channel_id)
+    logging.info(f"Channel to be changed is: {channel.name}")
 
+    if channel is None:
+        # If the channel is not found in cache, fetch it
+        try:
+            channel = await bot.fetch_channel(channel_id)
+        except discord.NotFound:
+            logger.info(f"Channel with ID {channel_id} not found.")
+            return
+        except discord.Forbidden:
+            logger.info(f"Insufficient permissions to access channel ID {channel_id}.")
+            return
+        except Exception as e:
+            logger.info(f"An error occurred while fetching the channel: {e}")
+            return
+    
+    
+    await channel.edit(name=f"Humans: {member_count}")
 
 
 # # # COMMANDS # # # 
@@ -76,7 +108,6 @@ async def gather_command(interaction: discord.Interaction, months: str):
 #     data = await gatherData(verbose=False, monthOffset=1)
 #     response = await forwardData(data, URL)
 #     logger.info(f"Data collected and forwarded. Status: {response.status_code}")
-
 
 
 
@@ -179,6 +210,33 @@ async def handle_client(reader, writer):
                 continue  
             signal = data.decode('utf-8').strip()
             logger.info(f"Received signal: {signal}")
+            
+            channel_id = 778642179337093160  # Replace with the actual channel ID
+            channel = bot.get_channel(channel_id)
+
+            if channel is None:
+                # If the channel is not found in cache, fetch it
+                try:
+                    channel = await bot.fetch_channel(channel_id)
+                except discord.NotFound:
+                    logger.error(f"Channel with ID {channel_id} not found.")
+                    continue  # Skip sending the message
+                except discord.Forbidden:
+                    logger.error(f"Insufficient permissions to access channel ID {channel_id}.")
+                    continue
+                except Exception as e:
+                    logger.error(f"An error occurred while fetching the channel: {e}")
+                    continue
+
+            try:
+                # Send the message to the channel
+                await channel.send(f"{signal}")
+                logger.info(f"Sent message to channel ID {channel_id}.")
+            except discord.Forbidden:
+                logger.error(f"Insufficient permissions to send messages to channel ID {channel_id}.")
+            except Exception as e:
+                logger.error(f"An error occurred while sending message to the channel: {e}")
+
 
             if signal == 'gather':
                 data = await gatherData(verbose=False, monthOffset=1)
@@ -202,6 +260,8 @@ async def handle_client(reader, writer):
                 writer.write((response + '\n').encode('utf-8'))
                 await writer.drain()
                 logger.info("Sent 'Unknown command' response.")
+                
+            
 
     except Exception as e:
         logger.error(f"An error occurred: {e}", exc_info=True)
