@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"strings"
 	"sync"
 )
 
@@ -104,6 +105,9 @@ var (
 func InitDB(dbpath string, initScript string) error {
 	// Create and init the database!
 	var err error
+	var logBuilder strings.Builder
+	logBuilder.WriteString("Initializing Database...\n")
+	logBuilder.WriteString(fmt.Sprintf("[INIT DB] Path: %s\n", dbpath))
 
 	dbh := GetConnector(dbpath)
 	err = dbh.openConnection()
@@ -116,31 +120,33 @@ func InitDB(dbpath string, initScript string) error {
 
 	fileContent, err := os.ReadFile(initScript)
 	if err != nil {
-		log.Printf("There was an error reading the sql file, will use a default instead...: " + err.Error())
-		log.Print("Running default script...")
-		_, err = dbh.RunSQLscript(INITsql)
+		logBuilder.WriteString("Could not read from file, will use a default instead...: \n")
+		logBuilder.WriteString("[INIT DB] Running default script...\n")
+		res, err := dbh.RunSQLscript(INITsql)
+		if err != nil {
+			log.Print("[INIT DB]Error initializing the database: " + err.Error())
+		}
+		logBuilder.WriteString(fmt.Sprintf("SQL script result: %s\n", res))
 
 	} else {
-		log.Print("Running script from file...")
-		_, err = dbh.RunSQLscript(string(fileContent))
+		logBuilder.WriteString("[INIT DB] Running script from file...\n")
+		res, err := dbh.RunSQLscript(string(fileContent))
 		if err != nil {
-			log.Print("Error initializing the database: " + err.Error())
+			log.Print("[INIT DB]Error initializing the database: " + err.Error())
 		}
+		logBuilder.WriteString(fmt.Sprintf("[INIT DB] Script execution result: %s\n", res))
 
 	}
-
-	// populator_script := "C:\\Users\\kyria\\Documents\\Coding\\Discord Bots\\internal\\database\\populate_current_tables.sql"
-	// fileContent, _ = os.ReadFile(populator_script)
-	// res, err := dbh.RunSQLscript(string(fileContent))
-	// log.Printf("Result: %v, -> possible error: %v", res, err)
+	logBuilder.WriteString("\n")
+	log.Print(logBuilder.String())
 
 	return err
 }
 
 type DBHandler struct {
 	DB     *sql.DB
-	mu     sync.Mutex
 	dbFile string
+	mu     sync.Mutex
 }
 
 // Opens a connection to the database and holds reference to the Struct Handler
@@ -166,34 +172,62 @@ func (dbh *DBHandler) Close() {
 	}
 }
 
+func (dbh *DBHandler) Metrics(mtype string) (string, error) {
+	mu := &dbh.mu
+	mu.Lock()
+	defer mu.Unlock()
+
+	err := dbh.openConnection()
+	if err != nil {
+		log.Printf("There's been an error creating the DB handler: %v", err)
+		return "Failed to create DB handler", err
+	}
+	var result string
+
+	switch mtype {
+	case "all":
+		// Decide what metrics to get.
+	case "members":
+
+	case "bots":
+
+	case "lines":
+
+	default:
+		log.Print("Shouldn't be here...")
+		return "", fmt.Errorf("Incorrect type", nil)
+	}
+
+	return result, nil
+}
+
+// Sql execution funcs
 // Should be used to initialize the database table
-func (dbh *DBHandler) RunSQLscript(sql string) (sql.Result, error) {
+func (dbh *DBHandler) RunSQLscript(sql string) (string, error) {
 	dbh.mu.Lock()
 	defer dbh.mu.Unlock()
 
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error opening the DB connection." + err.Error())
-		return nil, err
+		return "No result...", err
 	}
 	defer dbh.Close()
 
-	log.Println("Executing SQL script...")
 	result, err := dbh.DB.Exec(sql)
 	if err != nil {
-		return nil, fmt.Errorf("error executing SQL script: %w", err)
+		return "No resutt...", fmt.Errorf("error executing SQL script: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		log.Print("Rows affected error: " + err.Error())
+		return fmt.Sprintf("Script executed. Rows affected error: " + err.Error()), err
 	}
 
-	log.Printf("Rows affected: %v", rowsAffected)
-
-	return result, nil
+	return fmt.Sprintf("Script executed. Rows affected: %v", rowsAffected), nil
 }
 
+// Health checking funcs
 type SchemaInfo struct {
 	Tables []TableInfo `json:"tables"`
 }
@@ -330,6 +364,7 @@ func DBHealthCheck(dbpath string) *SchemaInfo {
 	return &schema
 }
 
+// utils
 func isNumeric(s string) bool {
 	re := regexp.MustCompile(`^[0-9]+$`)
 	return re.MatchString(s)

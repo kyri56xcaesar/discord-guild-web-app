@@ -263,7 +263,7 @@ func MemberHandler(w http.ResponseWriter, r *http.Request) {
 func DataIndexHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
-	pathsArgs := strings.SplitN(r.URL.String(), "/", 4)
+	dataT := strings.SplitN(r.URL.String(), "/", 4)[2]
 
 	switch dataT {
 	case typeMember:
@@ -573,18 +573,24 @@ func LineHandler(w http.ResponseWriter, r *http.Request) {
 func MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v (Metrics)", r.Method, r.URL.Path)
 
-	mtype := "all"
-	mtype = strings.SplitN(r.URL.Path, "/", 4)
+	dbh := database.GetConnector(DBName)
 
-	switch mtype {
-	case "all":
-	case "members":
-	case "bots":
-	case "lines":
-	default:
-		log.Print("Shouldn't be here...")
-		RespondWithError(w, http.StatusInternalServerError, "Invalid.")
+	mtype := "all"
+	split := strings.SplitN(r.URL.Path, "/", 4)
+
+	last := split[len(split)-1]
+	if last != "" {
+		mtype = last
 	}
+	log.Printf("Split: %v and last part is: %v", split, last)
+
+	metrics, err := dbh.Metrics(mtype)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve data metrics")
+		return
+	}
+
+	RespondWithJSON(w, http.StatusOK, metrics)
 }
 
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {

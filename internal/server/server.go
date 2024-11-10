@@ -63,8 +63,6 @@ func NewServer(conf string) (*Server, error) {
 
 	currentIndex += 1
 
-	log.Printf("Current Server ID: %d", currentIndex)
-
 	return &server, nil
 }
 
@@ -135,11 +133,12 @@ func (s *Server) routes() {
 }
 
 func (s *Server) Start() {
+	log.Print("Server starting...")
 	config, err := loadConfig(s.ConfPath)
 	if err != nil {
 		log.Fatalf("Error loading configuration: %v", err)
 	}
-	log.Printf("Config file: %+v", config)
+	log.Printf("[CFG]Loading configurations...\nServerID: %d\n%v", currentIndex, config.toString())
 
 	curpath, err := os.Getwd()
 	if err != nil {
@@ -149,7 +148,7 @@ func (s *Server) Start() {
 
 	// Init database
 	if err = database.InitDB(config.DBfile, scriptPath); err != nil {
-		log.Fatalf("Error during db initialization: %v", err)
+		log.Fatalf("[INIT DB]Error during db initialization: %v", err)
 	}
 	// Set database reference
 	DBName = config.DBfile

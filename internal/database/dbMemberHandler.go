@@ -271,6 +271,7 @@ func (dbh *DBHandler) GetMultipleMembersByIdentifiers(identifiers []string) ([]*
 	}
 	defer dbh.DB.Close()
 
+	// queryUsername := "SELECT * FROM members WHERE username IN "
 	query := "SELECT * FROM members WHERE userid IN (?" + strings.Repeat(",?", len(identifiers)-1) + ")"
 
 	// Execute the query with the provided identifiers
