@@ -68,50 +68,67 @@ func NewServer(conf string) (*Server, error) {
 	return &server, nil
 }
 
+// ToDo
+// CRUD: Check
+// Add Pagination: ToDo
+// Bulk Operations: ToDo
+// Search(Filteting): ToDo
+// Metrics/Stats: ToDo
+// Exports/Imports: ToDo
+// Utilities: Check
+// Documentation: ToDo
+//
+
 func (s *Server) routes() {
 	s.Router.StrictSlash(true)
 
 	// Root handler for health check
+	// Templates
 	s.Router.HandleFunc("/", RootHandler)
-	s.Router.HandleFunc("/healthz", HealthCheck)
 	s.Router.HandleFunc("/dbots", BotsDHandler)
 	s.Router.HandleFunc("/hof", HofHandler)
 
 	s.Router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("./cmd/api/web/assets"))))
+	// Admin (Must Verify)
+	s.Router.HandleFunc("/admin/healthz", HealthCheck)
+
 	// Subrouter for /guild
 	guildRouter := s.Router.PathPrefix("/guild").Subrouter()
+
+	// CRUD
 	guildRouter.HandleFunc("/", GuildHandler).Methods("GET", "POST")
 	guildRouter.HandleFunc("/members", MembersHandler).Methods("GET", "POST")
 	guildRouter.HandleFunc("/bots", BotsHandler).Methods("GET", "POST")
-	guildRouter.HandleFunc("/lines", RootLineHandler).Methods("GET", "POST")
+	guildRouter.HandleFunc("/lines", LinesHandler).Methods("GET", "POST")
 
+	// Specific CRUD
+	guildRouter.HandleFunc("/members/{identifier}", MemberHandler).Methods("GET", "PUT", "DELETE")
+	guildRouter.HandleFunc("/bots/{identifier:[0-9]+}", BotHandler).Methods("GET", "POST", "PUT", "DELETE")
+	guildRouter.HandleFunc("/lines/{identifier:[0-9]+}", LineHandler).Methods("GET", "PUT", "DELETE")
+
+	// Filtered Search
+	guildRouter.HandleFunc("/members/search", GMultipleData).Methods("GET")
+	guildRouter.HandleFunc("/bots/search", GMultipleData).Methods("GET")
+	guildRouter.HandleFunc("/lines/search", GMultipleData).Methods("GET")
+
+	// Filtered Update, Delete
+	guildRouter.HandleFunc("/members/delete", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
+	guildRouter.HandleFunc("/bots/delete", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
+	guildRouter.HandleFunc("/lines/delete", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
+
+	// Utility endpoints and Metrics
 	guildRouter.HandleFunc("/members/data", DataIndexHandler).Methods("GET")
 	guildRouter.HandleFunc("/bots/data", DataIndexHandler).Methods("GET")
 	guildRouter.HandleFunc("/lines/data", DataIndexHandler).Methods("GET")
-
-	guildRouter.HandleFunc("/members/get", GMultipleData).Methods("GET")
-	guildRouter.HandleFunc("/bots/get", GMultipleData).Methods("GET")
-	guildRouter.HandleFunc("/lines/get", GMultipleData).Methods("GET")
 
 	guildRouter.HandleFunc("/members/get/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
 	guildRouter.HandleFunc("/bots/get/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
 	guildRouter.HandleFunc("/lines/get/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
 
-	guildRouter.HandleFunc("/members/delete", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
-	guildRouter.HandleFunc("/bots/delete", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
-	guildRouter.HandleFunc("/lines/delete", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
-
-	membersRouter := guildRouter.PathPrefix("/member").Subrouter()
-	membersRouter.HandleFunc("/", RootMemberHandler).Methods("GET", "POST")
-	membersRouter.HandleFunc("/{identifier}/", MemberHandler).Methods("GET", "PUT", "DELETE")
-
-	botsRouter := guildRouter.PathPrefix("/bot").Subrouter()
-	botsRouter.HandleFunc("/", RootBotHandler).Methods("GET", "POST")
-	botsRouter.HandleFunc("/{identifier:[0-9]+}/", BotHandler).Methods("GET", "POST", "PUT", "DELETE")
-
-	lineRouter := guildRouter.PathPrefix("/line").Subrouter()
-	lineRouter.HandleFunc("/", RootLineHandler).Methods("GET", "POST")
-	lineRouter.HandleFunc("/{identifier:[0-9]+}/", LineHandler).Methods("GET", "PUT", "DELETE")
+	guildRouter.HandleFunc("/metrics", MetricsHandler).Methods("GET")
+	guildRouter.HandleFunc("/metrics/members", MetricsHandler).Methods("GET")
+	guildRouter.HandleFunc("/metrics/bots", MetricsHandler).Methods("GET")
+	guildRouter.HandleFunc("/metrics/lines", MetricsHandler).Methods("GET")
 
 	s.Router.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	s.Router.MethodNotAllowedHandler = http.HandlerFunc(notAllowedHandler)

@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -50,17 +51,48 @@ func MembersHandler(w http.ResponseWriter, r *http.Request) {
 		RespondWithJSON(w, http.StatusOK, res)
 
 	case http.MethodPost:
+		var err error
 		var newMembers []models.Member
-		if err := json.NewDecoder(r.Body).Decode(&newMembers); err != nil {
-			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
-			return
-		}
-		if _, err := dbh.InsertMultipleMembers(newMembers); err != nil {
-			RespondWithError(w, http.StatusInternalServerError, "Failed to insert members")
+
+		// need to buffer it first
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Printf("Failed to buffer body. %v", err)
+			RespondWithError(w, http.StatusInternalServerError, "Failed to read body")
 			return
 		}
 
-		RespondWithJSON(w, http.StatusCreated, newMembers)
+		err = json.Unmarshal(body, &newMembers)
+		if err == nil { // Its an array given
+			_, err := dbh.InsertMultipleMembers(newMembers)
+			if err != nil {
+				log.Printf("Error inserting members: %v", err)
+				RespondWithError(w, http.StatusInternalServerError, "Failed to insert members")
+				return
+			}
+
+			RespondWithJSON(w, http.StatusCreated, "Created multiple members")
+			return
+		}
+
+		// Check if its a single member
+		newMember := models.Member{}
+		err = json.Unmarshal(body, &newMember)
+		if err != nil {
+			log.Printf("Error decoding JSON: %v", err)
+			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
+			return
+		}
+		log.Print("Its a single member!")
+
+		_, err = dbh.InsertMember(newMember)
+		if err != nil {
+			// log.Printf("Error inserting member %v...: %v", newMember, err.Error())
+			RespondWithError(w, http.StatusBadRequest, "Failed to insert member")
+			return
+		}
+
+		RespondWithJSON(w, http.StatusCreated, "Created member.")
 
 	default:
 		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -223,24 +255,6 @@ func MemberHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		RespondWithJSON(w, http.StatusCreated, "Deletion success")
-
-	case http.MethodPost:
-		newMember := models.Member{}
-		if err := json.NewDecoder(r.Body).Decode(&newMember); err != nil {
-			// log.Printf("Error decoding JSON: %v", err)
-			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
-			return
-		}
-
-		member, err := dbh.InsertMember(newMember)
-		if err != nil {
-			// log.Printf("Error inserting member %v...: %v", newMember, err.Error())
-			RespondWithError(w, http.StatusBadRequest, "Did not insert the member")
-			return
-		}
-
-		RespondWithJSON(w, http.StatusCreated, member)
-
 	default:
 		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
@@ -249,7 +263,7 @@ func MemberHandler(w http.ResponseWriter, r *http.Request) {
 func DataIndexHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
-	dataT := strings.SplitN(r.URL.String(), "/", 4)[2]
+	pathsArgs := strings.SplitN(r.URL.String(), "/", 4)
 
 	switch dataT {
 	case typeMember:
@@ -319,64 +333,10 @@ func DataHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func RootMemberHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
-
-	dbh := database.GetConnector(DBName)
-
-	switch r.Method {
-	case http.MethodGet:
-		http.Redirect(w, r, "/guild/members", http.StatusMovedPermanently)
-
-	case http.MethodPost:
-		var newMember models.Member
-		if err := json.NewDecoder(r.Body).Decode(&newMember); err != nil {
-			// log.Printf("Error decoding JSON: %v", err)
-			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
-			return
-		}
-
-		if _, err := dbh.InsertMember(newMember); err != nil {
-			// log.Printf("Error inserting a single member: %v... %v", newMember, err.Error())
-			RespondWithError(w, http.StatusBadRequest, "Failed to insert member")
-			return
-		}
-		RespondWithJSON(w, http.StatusCreated, newMember)
-
-	default:
-		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
-	}
-}
-
 func GuildHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
 	RespondWithJSON(w, http.StatusFound, "{'guilds'}")
-}
-
-func RootBotHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
-	dbh := database.GetConnector(DBName)
-
-	switch r.Method {
-	case http.MethodGet:
-		log.Print("Redirecting to /guild/bots/")
-		http.Redirect(w, r, "/guild/bots", http.StatusMovedPermanently)
-	case http.MethodPost:
-		var newBot models.Bot
-		err := json.NewDecoder(r.Body).Decode(&newBot)
-		if err != nil {
-			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
-			return
-		}
-
-		_, err = dbh.InsertBot(&newBot)
-		if err != nil {
-			RespondWithError(w, http.StatusBadRequest, "Failed to insert multiple lines")
-		} else {
-			RespondWithJSON(w, http.StatusCreated, newBot)
-		}
-	}
 }
 
 func BotHandler(w http.ResponseWriter, r *http.Request) {
@@ -447,22 +407,48 @@ func BotsHandler(w http.ResponseWriter, r *http.Request) {
 		RespondWithJSON(w, http.StatusOK, res)
 
 	case http.MethodPost:
-		var newBots []models.Bot
-		if err := json.NewDecoder(r.Body).Decode(&newBots); err != nil {
-			RespondWithError(w, http.StatusBadRequest, "Invalid JSON formant")
+		var err error
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Printf("Failed to buffer body. %v", err)
+			RespondWithError(w, http.StatusInternalServerError, "Failed to read body")
 			return
 		}
-		if _, err := dbh.InsertMultipleBots(newBots); err != nil {
-			RespondWithError(w, http.StatusBadRequest, "Failed to insert bots")
-		} else {
-			RespondWithJSON(w, http.StatusCreated, newBots)
+
+		var newBots []models.Bot
+		// Test if multiple
+		err = json.Unmarshal(body, &newBots)
+		if err == nil {
+			// Its multiple bots
+			if _, err := dbh.InsertMultipleBots(newBots); err != nil {
+				RespondWithError(w, http.StatusInternalServerError, "Failed to insert bots")
+				return
+			}
+			RespondWithJSON(w, http.StatusCreated, "Created bots")
+			return
 		}
+
+		var newBot models.Bot
+		err = json.Unmarshal(body, &newBot)
+		if err != nil {
+			log.Printf("Invalid JSON format. %v", err)
+			RespondWithError(w, http.StatusBadRequest, "Invalid JSON Format")
+			return
+		}
+		if _, err := dbh.InsertBot(&newBot); err != nil {
+			RespondWithError(w, http.StatusInternalServerError, "Failed to insert bot")
+			return
+		}
+
+		RespondWithJSON(w, http.StatusCreated, "Created bot")
+
 	default:
 		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
 }
 
-func RootLineHandler(w http.ResponseWriter, r *http.Request) {
+func LinesHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
 	dbh := database.GetConnector(DBName)
@@ -485,18 +471,45 @@ func RootLineHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		RespondWithJSON(w, http.StatusOK, res)
 	case http.MethodPost:
+		var err error
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Printf("Failed to read body buffer. %v", err)
+			RespondWithError(w, http.StatusInternalServerError, "Failed to read body")
+			return
+		}
+
 		var newLines []models.Line
-		if err := json.NewDecoder(r.Body).Decode(&newLines); err != nil {
-			log.Printf("Error decoding JSON: %v", err)
+
+		err = json.Unmarshal(body, &newLines)
+		if err == nil {
+			// Multiple lines indeed
+			if _, err := dbh.InsertMultipleLines(newLines); err != nil {
+				log.Printf("Error inserting multiple lines in the DB... " + err.Error())
+				RespondWithError(w, http.StatusBadRequest, "Failed to insert lines")
+				return
+			}
+
+			RespondWithJSON(w, http.StatusCreated, "Created lines")
+			return
+
+		}
+
+		var newLine models.Line
+		err = json.Unmarshal(body, &newLine)
+		if err != nil {
+			log.Printf("Invalid JSON format %v", err)
 			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
 			return
 		}
-		if _, err := dbh.InsertMultipleLines(newLines); err != nil {
-			log.Printf("Error inserting multiple lines in the DB... " + err.Error())
-			RespondWithError(w, http.StatusBadRequest, "Failed to insert lines")
-		} else {
-			RespondWithJSON(w, http.StatusCreated, newLines)
+
+		if _, err := dbh.InsertLine(&newLine); err != nil {
+			log.Printf("Error inserting line in the DB... %v", err)
+			RespondWithError(w, http.StatusInternalServerError, "Failed to insert line")
+			return
 		}
+
+		RespondWithJSON(w, http.StatusCreated, "Created line")
 
 	default:
 		RespondWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -505,14 +518,11 @@ func RootLineHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func LineHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
-
 	dbh := database.GetConnector(DBName)
 
 	vars := mux.Vars(r)
 	identifier := vars["identifier"]
-
-	log.Printf("Identifier: %s", identifier)
+	log.Printf("%v request on path: %v with identifier %v", r.Method, r.URL.Path, identifier)
 
 	switch r.Method {
 	case http.MethodGet:
@@ -560,11 +570,30 @@ func LineHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func MetricsHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v (Metrics)", r.Method, r.URL.Path)
+
+	mtype := "all"
+	mtype = strings.SplitN(r.URL.Path, "/", 4)
+
+	switch mtype {
+	case "all":
+	case "members":
+	case "bots":
+	case "lines":
+	default:
+		log.Print("Shouldn't be here...")
+		RespondWithError(w, http.StatusInternalServerError, "Invalid.")
+	}
+}
+
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v (Not Found)", r.Method, r.URL.Path)
 	RespondWithError(w, http.StatusNotFound, "Not Found")
 }
 
 func notAllowedHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v (Not Allowed)", r.Method, r.URL.Path)
 	RespondWithError(w, http.StatusMethodNotAllowed, "Not Allowed")
 }
 
