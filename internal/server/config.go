@@ -37,12 +37,28 @@ func loadConfig(path string) (*EnvConfig, error) {
 		HTTPSPort:      getEnv("HTTPS_PORT", "443"),
 		IP:             getEnv("IP", "localhost"),
 		DBfile:         getEnv("DB_NAME", "dads.db"),
-		AllowedOrigins: parseValues("ALLOWED_ORIGINS", []string{"None"}),
-		AllowedHeaders: parseValues("ALLOWED_HEADERS", nil),
-		AllowedMethods: parseValues("ALLOWED_METHODS", nil),
+		AllowedOrigins: getEnvs("ALLOWED_ORIGINS", []string{"None"}),
+		AllowedHeaders: getEnvs("ALLOWED_HEADERS", nil),
+		AllowedMethods: getEnvs("ALLOWED_METHODS", nil),
 	}
 
 	return config, nil
+}
+
+func getEnv(key, fallback string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+	return fallback
+}
+
+func getEnvs(key string, fallback []string) []string {
+	if value, exists := os.LookupEnv(key); exists {
+		values := strings.SplitAfter(value, ",")
+		return values
+	}
+
+	return fallback
 }
 
 // CertFile string, KeyFile string, HTTPPort string, HTTPSPort string, IP string, DBfile string, AllowedOrigins []string, AllowedHeaders []string
@@ -75,20 +91,4 @@ func (cfg *EnvConfig) toString() string {
 	strBuilder.WriteString("\n")
 
 	return strBuilder.String()
-}
-
-func getEnv(key, fallback string) string {
-	if value, exists := os.LookupEnv(key); exists {
-		return value
-	}
-	return fallback
-}
-
-func parseValues(key string, fallback []string) []string {
-	if value, exists := os.LookupEnv(key); exists {
-		values := strings.SplitAfter(value, ",")
-		return values
-	}
-
-	return fallback
 }

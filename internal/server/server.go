@@ -22,7 +22,7 @@ import (
 
 type Server struct {
 	Router   *mux.Router
-	ConfPath string // sqlite .db filepath
+	Config   *EnvConfig // sqlite .db filepath
 	serverID int
 }
 
@@ -58,7 +58,15 @@ func NewServer(conf string) (*Server, error) {
 
 	server.serverID = currentIndex
 	server.Router = mux.NewRouter()
-	server.ConfPath = conf
+
+	var err error
+	server.Config, err = loadConfig(conf)
+	if err != nil {
+		log.Fatalf("Error loading config file. Should exit. %v", err)
+		return nil, err
+	}
+	log.Printf("[CFG]Loading configurations...\nServerID: %d\n%v", currentIndex, server.Config.toString())
+
 	server.routes()
 
 	currentIndex += 1
@@ -134,11 +142,6 @@ func (s *Server) routes() {
 
 func (s *Server) Start() {
 	log.Print("Server starting...")
-	config, err := loadConfig(s.ConfPath)
-	if err != nil {
-		log.Fatalf("Error loading configuration: %v", err)
-	}
-	log.Printf("[CFG]Loading configurations...\nServerID: %d\n%v", currentIndex, config.toString())
 
 	curpath, err := os.Getwd()
 	if err != nil {
@@ -147,27 +150,27 @@ func (s *Server) Start() {
 	scriptPath := fmt.Sprintf("%s%s", curpath, database.InitSQLScriptPath)
 
 	// Init database
-	if err = database.InitDB(config.DBfile, scriptPath); err != nil {
+	if err = database.InitDB(s.Config.DBfile, scriptPath); err != nil {
 		log.Fatalf("[INIT DB]Error during db initialization: %v", err)
 	}
 	// Set database reference
-	DBName = config.DBfile
+	DBName = s.Config.DBfile
 
 	// Enable CORS for all routes
 	corsOptions := handlers.CORS(
-		handlers.AllowedOrigins(config.AllowedOrigins),
-		handlers.AllowedHeaders(config.AllowedHeaders),
-		handlers.AllowedMethods(config.AllowedMethods),
+		handlers.AllowedOrigins(s.Config.AllowedOrigins),
+		handlers.AllowedHeaders(s.Config.AllowedHeaders),
+		handlers.AllowedMethods(s.Config.AllowedMethods),
 	)
 
 	srv := &http.Server{
 		Handler: corsOptions(s.Router),
-		Addr:    ":" + config.HTTPPort,
+		Addr:    ":" + s.Config.HTTPPort,
 	}
 
 	// Start server in a goroutine
 	go func() {
-		log.Println("Server listening on port " + config.HTTPPort)
+		log.Println("Server listening on port " + s.Config.HTTPPort)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed: %v", err)
 		}
@@ -207,7 +210,7 @@ func (s *Server) Start() {
 					newConfigPath := os.Getenv("NEW_CONFIG_PATH")
 					if newConfigPath != "" {
 						log.Printf("Using new config path: %s", newConfigPath)
-						s.ConfPath = newConfigPath // Update the path if provided
+						s.Config.ConfigPath = newConfigPath // Update the path if provided
 					}
 
 					// Throttle restarts to prevent excessive operations
@@ -222,7 +225,7 @@ func (s *Server) Start() {
 			case syscall.SIGUSR2:
 				go func() {
 					log.Println("Entering script execution prompt...")
-					s.runSQLScript(config.DBfile)
+					s.runSQLScript(s.Config.DBfile)
 				}()
 			}
 		}
@@ -240,7 +243,7 @@ func (s *Server) restartServer(srv *http.Server) {
 	}
 	log.Println("Server shut down for restart")
 
-	config, err := loadConfig(s.ConfPath)
+	config, err := loadConfig(s.Config.ConfigPath)
 	if err != nil {
 		log.Fatalf("Error loading configuration: %v", err)
 	}
