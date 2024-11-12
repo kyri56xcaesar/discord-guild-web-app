@@ -440,7 +440,7 @@ func (dbh *DBHandler) DeleteMultipleBotsByIdentifiers(identifiers []string) (str
 	}
 
 	queryID := `DELETE FROM bots WHERE botid = ?`
-	queryUsername := `DELETE FROM members WHERE botname = ?`
+	queryUsername := `DELETE FROM bots WHERE botname = ?`
 
 	totalDeleted := 0
 	for _, identifier := range identifiers {
@@ -797,6 +797,8 @@ func (dbh *DBHandler) DeleteMultipleLinesByIdentifiers(identifiers []string) (st
 		var res sql.Result
 		if isNumeric(identifier) {
 			res, err = tx.Exec(queryID, identifier)
+		} else {
+			continue
 		}
 
 		if err != nil {

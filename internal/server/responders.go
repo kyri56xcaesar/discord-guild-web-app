@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
 	"text/template"
 )
 
@@ -79,9 +78,4 @@ func RespondWithTemplate(w http.ResponseWriter, code int, templatePath string, d
 		log.Printf("Failed to execute template: %v", err)
 		http.Error(w, "Error rendering template", http.StatusInternalServerError)
 	}
-}
-
-func IsAlphanumeric(s string) bool {
-	re := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
-	return re.MatchString(s)
 }

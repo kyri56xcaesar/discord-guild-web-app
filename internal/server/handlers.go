@@ -106,6 +106,8 @@ func GMultipleData(w http.ResponseWriter, r *http.Request) {
 
 	dataT := strings.SplitN(r.URL.String(), "/", 4)[2]
 
+	log.Printf("DataT: %s", dataT)
+
 	idsParam := r.URL.Query().Get("ids")
 	if idsParam == "" {
 		RespondWithError(w, http.StatusBadRequest, "Must provide identifiers")
@@ -149,7 +151,7 @@ func UDMultipleData(w http.ResponseWriter, r *http.Request) {
 
 	dbh := database.GetConnector(DBName)
 
-	dataT := strings.SplitN(r.URL.String(), "/", 4)[2]
+	dataT := strings.SplitN(strings.SplitN(r.URL.String(), "/", 4)[3], "?", 2)[0]
 
 	idsParam := r.URL.Query().Get("ids")
 	if idsParam == "" {
@@ -190,6 +192,9 @@ func UDMultipleData(w http.ResponseWriter, r *http.Request) {
 		}
 	default:
 		// Impossible to reach here!
+		log.Print("Shoulnd't be here!")
+		RespondWithError(w, http.StatusInternalServerError, "Invalid")
+		return
 	}
 	if err != nil {
 		RespondWithError(w, http.StatusInternalServerError, message)
@@ -263,7 +268,7 @@ func MemberHandler(w http.ResponseWriter, r *http.Request) {
 func DataIndexHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
-	dataT := strings.SplitN(r.URL.String(), "/", 4)[2]
+	dataT := strings.SplitN(r.URL.String(), "/", 4)[3]
 
 	switch dataT {
 	case typeMember:
@@ -284,7 +289,7 @@ func DataHandler(w http.ResponseWriter, r *http.Request) {
 
 	dbh := database.GetConnector(DBName)
 
-	dataT := strings.SplitN(r.URL.String(), "/", 4)[2]
+	dataT := strings.SplitN(r.URL.String(), "/", 5)[3]
 
 	vars := mux.Vars(r)
 	identifier := vars["identifier"]

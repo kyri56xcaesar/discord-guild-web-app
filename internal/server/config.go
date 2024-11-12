@@ -69,20 +69,22 @@ func (cfg *EnvConfig) toString() string {
 	reflectedValues := reflect.ValueOf(cfg).Elem()
 	reflectedTypes := reflect.TypeOf(cfg).Elem()
 
-	strBuilder.WriteString(fmt.Sprintf("CONFIG: %s\n", cfg.ConfigPath))
+	strBuilder.WriteString(fmt.Sprintf("[CFG]CONFIGURATION: %s\n", cfg.ConfigPath))
 
 	for i := 0; i < reflectedValues.NumField(); i++ {
 		fieldName := reflectedTypes.Field(i).Name
 		fieldValue := reflectedValues.Field(i).Interface()
+
+		strBuilder.WriteString("[CFG]")
 		if i < 9 {
 			strBuilder.WriteString(fmt.Sprintf("%d.  ", i+1))
 		} else {
 			strBuilder.WriteString(fmt.Sprintf("%d. ", i+1))
 		}
-		if len(fieldName) < 5 {
-			strBuilder.WriteString(fmt.Sprintf("%v\t\t\t-> %v\n", fieldName, fieldValue))
-		} else if len(fieldName) < 14 {
+		if len(fieldName) < 7 {
 			strBuilder.WriteString(fmt.Sprintf("%v\t\t-> %v\n", fieldName, fieldValue))
+		} else if len(fieldName) < 14 {
+			strBuilder.WriteString(fmt.Sprintf("%v\t-> %v\n", fieldName, fieldValue))
 		} else {
 			strBuilder.WriteString(fmt.Sprintf("%v\t-> %v\n", fieldName, fieldValue))
 		}

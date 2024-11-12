@@ -65,7 +65,7 @@ func NewServer(conf string) (*Server, error) {
 		log.Fatalf("Error loading config file. Should exit. %v", err)
 		return nil, err
 	}
-	log.Printf("[CFG]Loading configurations...\nServerID: %d\n%v", currentIndex, server.Config.toString())
+	log.Printf("ServerID: %d\n[CFG]...Loading configurations...\n%v\n", currentIndex, server.Config.toString())
 
 	server.routes()
 
@@ -108,28 +108,28 @@ func (s *Server) routes() {
 	guildRouter.HandleFunc("/lines", LinesHandler).Methods("GET", "POST")
 
 	// Specific CRUD
-	guildRouter.HandleFunc("/members/{identifier}", MemberHandler).Methods("GET", "PUT", "DELETE")
-	guildRouter.HandleFunc("/bots/{identifier:[0-9]+}", BotHandler).Methods("GET", "POST", "PUT", "DELETE")
-	guildRouter.HandleFunc("/lines/{identifier:[0-9]+}", LineHandler).Methods("GET", "PUT", "DELETE")
+	guildRouter.HandleFunc("/member/{identifier}", MemberHandler).Methods("GET", "PUT", "DELETE")
+	guildRouter.HandleFunc("/bot/{identifier:[0-9]+}", BotHandler).Methods("GET", "POST", "PUT", "DELETE")
+	guildRouter.HandleFunc("/line/{identifier:[0-9]+}", LineHandler).Methods("GET", "PUT", "DELETE")
 
 	// Filtered Search
-	guildRouter.HandleFunc("/members/search", GMultipleData).Methods("GET")
-	guildRouter.HandleFunc("/bots/search", GMultipleData).Methods("GET")
-	guildRouter.HandleFunc("/lines/search", GMultipleData).Methods("GET")
+	guildRouter.HandleFunc("/search/members", GMultipleData).Methods("GET")
+	guildRouter.HandleFunc("/search/bots", GMultipleData).Methods("GET")
+	guildRouter.HandleFunc("/search/lines", GMultipleData).Methods("GET")
 
 	// Filtered Update, Delete
-	guildRouter.HandleFunc("/members/delete", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
-	guildRouter.HandleFunc("/bots/delete", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
-	guildRouter.HandleFunc("/lines/delete", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
+	guildRouter.HandleFunc("/delete/members", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
+	guildRouter.HandleFunc("/delete/bots", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
+	guildRouter.HandleFunc("/delete/lines", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
 
 	// Utility endpoints and Metrics
-	guildRouter.HandleFunc("/members/data", DataIndexHandler).Methods("GET")
-	guildRouter.HandleFunc("/bots/data", DataIndexHandler).Methods("GET")
-	guildRouter.HandleFunc("/lines/data", DataIndexHandler).Methods("GET")
+	guildRouter.HandleFunc("/get/members/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
+	guildRouter.HandleFunc("/get/bots/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
+	guildRouter.HandleFunc("/get/lines/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
 
-	guildRouter.HandleFunc("/members/get/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
-	guildRouter.HandleFunc("/bots/get/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
-	guildRouter.HandleFunc("/lines/get/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
+	guildRouter.HandleFunc("/data/members", DataIndexHandler).Methods("GET")
+	guildRouter.HandleFunc("/data/bots", DataIndexHandler).Methods("GET")
+	guildRouter.HandleFunc("/data/lines", DataIndexHandler).Methods("GET")
 
 	guildRouter.HandleFunc("/metrics", MetricsHandler).Methods("GET")
 	guildRouter.HandleFunc("/metrics/members", MetricsHandler).Methods("GET")
@@ -143,6 +143,7 @@ func (s *Server) routes() {
 func (s *Server) Start() {
 	log.Print("Server starting...")
 
+	// Database Setuo
 	curpath, err := os.Getwd()
 	if err != nil {
 		log.Fatalf("Error getting current working directory: %v", err)
@@ -156,6 +157,7 @@ func (s *Server) Start() {
 	// Set database reference
 	DBName = s.Config.DBfile
 
+	// Service Setup
 	// Enable CORS for all routes
 	corsOptions := handlers.CORS(
 		handlers.AllowedOrigins(s.Config.AllowedOrigins),
