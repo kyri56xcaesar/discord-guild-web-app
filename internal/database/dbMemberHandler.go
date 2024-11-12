@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"kyri56xcaesar/discord_bots_app/internal/models"
+	"kyri56xcaesar/discord_bots_app/internal/utils"
 
 	_ "modernc.org/sqlite"
 )
@@ -50,7 +51,7 @@ func (dbh *DBHandler) InsertMember(u models.Member) (*models.Member, error) {
 	u.ID = int(lastId)
 
 	// Insert the Roles and Messages now
-	var successMCount, successRCount int = 0, 0
+	var successMCount, successRCount int
 	if u.Messages != nil {
 		for _, msg := range u.Messages {
 			_, err := dbh.DB.Exec(`INSERT INTO messages (userid, content, channel, createdat)
@@ -108,7 +109,7 @@ func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) (string, er
 	}
 	defer stmt.Close() // Ensure the statement is closed after use
 
-	var successMCount, successRCount, successCount int = 0, 0, 0
+	var successMCount, successRCount, successCount int
 
 	// Loop through each member and try to insert them
 	for _, u := range members {
@@ -275,7 +276,7 @@ func (dbh *DBHandler) GetMultipleMembersByIdentifiers(identifiers []string) ([]*
 	query := "SELECT * FROM members WHERE userid IN (?" + strings.Repeat(",?", len(identifiers)-1) + ")"
 
 	// Execute the query with the provided identifiers
-	rows, err := dbh.DB.Query(query, interfaceSlice(identifiers))
+	rows, err := dbh.DB.Query(query, utils.InterfaceSlice(identifiers))
 	if err != nil {
 		log.Printf("Error retrieving members from the database: %v", err)
 		return nil, err
@@ -405,7 +406,7 @@ func (dbh *DBHandler) GetMemberByIdentifier(identifier string) (*models.Member, 
 
 	var row *sql.Row
 
-	if isNumeric(identifier) {
+	if utils.IsNumeric(identifier) {
 		row = dbh.DB.QueryRow("SELECT * FROM members WHERE id = ?", identifier)
 	} else {
 		row = dbh.DB.QueryRow("SELECT * FROM members WHERE username = ?", identifier)
@@ -475,7 +476,7 @@ func (dbh *DBHandler) DeleteMemberByIdentifier(identifier string) (string, error
 
 	var res sql.Result
 
-	if isNumeric(identifier) {
+	if utils.IsNumeric(identifier) {
 		res, err = dbh.DB.Exec(`DELETE FROM members WHERE id = ?`, identifier)
 	} else {
 		res, err = dbh.DB.Exec(`DELETE FROM members WHERE username = ?`, identifier)
@@ -519,7 +520,7 @@ func (dbh *DBHandler) DeleteMultipleMembersByIdentifiers(identifiers []string) (
 	totalDeleted := 0
 	for _, identifier := range identifiers {
 		var res sql.Result
-		if isNumeric(identifier) {
+		if utils.IsNumeric(identifier) {
 			res, err = tx.Exec(queryID, identifier)
 		} else {
 			res, err = tx.Exec(queryUsername, identifier)
@@ -565,7 +566,7 @@ func (dbh *DBHandler) UpdateMemberByIdentifier(u models.Member, identifier strin
 
 	var res sql.Result
 
-	if isNumeric(identifier) {
+	if utils.IsNumeric(identifier) {
 		res, err = dbh.DB.Exec(`UPDATE members SET guild = ?, id = ?, username = ?, nickname = ?, avatarurl = ?, 
 		displayavatarurl = ?, bannerurl = ?, displaybannerurl = ?, usercolor, 
 		joinedat = ?, userstatus = ?, msgcount = ? WHERE id = ?`,

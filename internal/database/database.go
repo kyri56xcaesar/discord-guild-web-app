@@ -5,13 +5,17 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"regexp"
 	"strings"
 	"sync"
 )
 
 // Helpers
 const (
+	TypeMember        string = "members"
+	TypeBot           string = "bots"
+	TypeLine          string = "lines"
+	TypeRole          string = "roles"
+	TypeMemberRoles   string = "member_roles"
 	InitSQLScriptPath string = "/internal/database/sqlscripts/db_init.sql"
 	INITsql           string = `
 		CREATE TABLE IF NOT EXISTS roles 
@@ -71,6 +75,36 @@ CREATE TABLE IF NOT EXISTS lines (
 `
 )
 
+type DBHandler struct {
+	DB     *sql.DB
+	dbFile string
+	mu     sync.Mutex
+}
+
+// Health checking funcs
+type SchemaInfo struct {
+	Tables []TableInfo `json:"tables"`
+}
+
+// TableInfo holds information about a single table.
+type TableInfo struct {
+	Name    string       `json:"name"`
+	Columns []ColumnInfo `json:"columns"`
+	Indexes []IndexInfo  `json:"indexes"`
+}
+
+// ColumnInfo holds information about a single column in a table.
+type ColumnInfo struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+// IndexInfo holds information about an index in a table.
+type IndexInfo struct {
+	Name  string `json:"name"`
+	Index string `json:"index"`
+}
+
 var (
 	AllowedMemberCols = map[string]bool{
 		// Members
@@ -100,6 +134,29 @@ var (
 		"ltypes":  true,
 	}
 )
+
+// Opens a connection to the database and holds reference to the Struct Handler
+// Should Close The Connection!
+func GetConnector(dbPath string) *DBHandler {
+	return &DBHandler{dbFile: dbPath}
+}
+
+func (dbh *DBHandler) openConnection() error {
+	var err error
+
+	dbh.DB, err = sql.Open("sqlite", dbh.dbFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (dbh *DBHandler) Close() {
+	if dbh.DB != nil {
+		dbh.DB.Close()
+	}
+}
 
 // sqlite path db file
 func InitDB(dbpath string, initScript string) error {
@@ -143,64 +200,6 @@ func InitDB(dbpath string, initScript string) error {
 	return err
 }
 
-type DBHandler struct {
-	DB     *sql.DB
-	dbFile string
-	mu     sync.Mutex
-}
-
-// Opens a connection to the database and holds reference to the Struct Handler
-// Should Close The Connection!
-func GetConnector(dbPath string) *DBHandler {
-	return &DBHandler{dbFile: dbPath}
-}
-
-func (dbh *DBHandler) openConnection() error {
-	var err error
-
-	dbh.DB, err = sql.Open("sqlite", dbh.dbFile)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (dbh *DBHandler) Close() {
-	if dbh.DB != nil {
-		dbh.DB.Close()
-	}
-}
-
-func (dbh *DBHandler) Metrics(mtype string) (string, error) {
-	mu := &dbh.mu
-	mu.Lock()
-	defer mu.Unlock()
-
-	err := dbh.openConnection()
-	if err != nil {
-		log.Printf("There's been an error creating the DB handler: %v", err)
-		return "Failed to create DB handler", err
-	}
-	var result string
-
-	switch mtype {
-	case "all":
-		// Decide what metrics to get.
-	case "members":
-
-	case "bots":
-
-	case "lines":
-
-	default:
-		log.Print("Shouldn't be here...")
-		return "", fmt.Errorf("Incorrect type ")
-	}
-
-	return result, nil
-}
-
 // Sql execution funcs
 // Should be used to initialize the database table
 func (dbh *DBHandler) RunSQLscript(sql string) (string, error) {
@@ -227,30 +226,7 @@ func (dbh *DBHandler) RunSQLscript(sql string) (string, error) {
 	return fmt.Sprintf("Script executed. Rows affected: %v", rowsAffected), nil
 }
 
-// Health checking funcs
-type SchemaInfo struct {
-	Tables []TableInfo `json:"tables"`
-}
-
-// TableInfo holds information about a single table.
-type TableInfo struct {
-	Name    string       `json:"name"`
-	Columns []ColumnInfo `json:"columns"`
-	Indexes []IndexInfo  `json:"indexes"`
-}
-
-// ColumnInfo holds information about a single column in a table.
-type ColumnInfo struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
-}
-
-// IndexInfo holds information about an index in a table.
-type IndexInfo struct {
-	Name  string `json:"name"`
-	Index string `json:"index"`
-}
-
+// Database check
 func DBHealthCheck(dbpath string) *SchemaInfo {
 	// Open the database connection
 	dbh := GetConnector(dbpath)
@@ -362,18 +338,4 @@ func DBHealthCheck(dbpath string) *SchemaInfo {
 
 	// Return the schema info
 	return &schema
-}
-
-// utils
-func isNumeric(s string) bool {
-	re := regexp.MustCompile(`^[0-9]+$`)
-	return re.MatchString(s)
-}
-
-func interfaceSlice(slice []string) []interface{} {
-	interfaces := make([]interface{}, len(slice))
-	for i, v := range slice {
-		interfaces[i] = v
-	}
-	return interfaces
 }

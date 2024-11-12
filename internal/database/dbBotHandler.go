@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"kyri56xcaesar/discord_bots_app/internal/models"
+	"kyri56xcaesar/discord_bots_app/internal/utils"
 )
 
 // Bots
@@ -40,9 +41,7 @@ func (dbh *DBHandler) GetAllBots() ([]*models.Bot, error) {
 
 		bot := &models.Bot{}
 
-		if err := rows.Scan(&bot.ID, &bot.Guild, &bot.Name, &bot.Avatar,
-			&bot.Banner, &bot.CreatedAt, &bot.Author, &bot.Status, &bot.IsSinger,
-		); err != nil {
+		if err := rows.Scan(bot.PtrsFieldsDB()); err != nil {
 			log.Printf("There's been an error scanning a user from the database." + err.Error())
 			return nil, err
 		}
@@ -90,7 +89,7 @@ func (dbh *DBHandler) GetMultipleBotsByIdentifiers(identifiers []string) ([]*mod
 	query := "SELECT * FROM bots WHERE botid IN (?" + strings.Repeat(",?", len(identifiers)-1) + ")"
 
 	// Execute the query with the provided identifiers
-	rows, err := dbh.DB.Query(query, interfaceSlice(identifiers))
+	rows, err := dbh.DB.Query(query, utils.InterfaceSlice(identifiers))
 	if err != nil {
 		log.Printf("Error retrieving bots from the database: %v", err)
 		return nil, err
@@ -445,7 +444,7 @@ func (dbh *DBHandler) DeleteMultipleBotsByIdentifiers(identifiers []string) (str
 	totalDeleted := 0
 	for _, identifier := range identifiers {
 		var res sql.Result
-		if isNumeric(identifier) {
+		if utils.IsNumeric(identifier) {
 			res, err = tx.Exec(queryID, identifier)
 		} else {
 			res, err = tx.Exec(queryUsername, identifier)
@@ -565,7 +564,7 @@ func (dbh *DBHandler) GetMultipleLinesByIdentifiers(identifiers []string) ([]mod
 	query := "SELECT * FROM lines WHERE lineid IN (?" + strings.Repeat(",?", len(identifiers)-1) + ")"
 
 	// Execute the query with the provided identifiers
-	rows, err := dbh.DB.Query(query, interfaceSlice(identifiers))
+	rows, err := dbh.DB.Query(query, utils.InterfaceSlice(identifiers))
 	if err != nil {
 		log.Printf("Error retrieving lines from the database: %v", err)
 		return nil, err
@@ -795,7 +794,7 @@ func (dbh *DBHandler) DeleteMultipleLinesByIdentifiers(identifiers []string) (st
 	totalDeleted := 0
 	for _, identifier := range identifiers {
 		var res sql.Result
-		if isNumeric(identifier) {
+		if utils.IsNumeric(identifier) {
 			res, err = tx.Exec(queryID, identifier)
 		} else {
 			continue

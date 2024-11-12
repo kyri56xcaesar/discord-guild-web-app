@@ -1,5 +1,9 @@
 package models
 
+import (
+	"kyri56xcaesar/discord_bots_app/internal/utils"
+)
+
 type Member struct {
 	Guild         string    `json:"userguild"`
 	Username      string    `json:"username"`
@@ -33,55 +37,55 @@ type Message struct {
 }
 
 func (msg *Message) VerifyMessage() error {
-	if !isValidUTF8String(msg.Content) {
-		return &FieldError{Field: "Content", Message: "must contain letters, numbers or symbols"}
+	if !utils.IsValidUTF8String(msg.Content) {
+		return &utils.FieldError{Field: "Content", Message: "must contain letters, numbers or symbols"}
 	}
 
-	if !isValidUTF8String(msg.Channel) {
-		return &FieldError{Field: "Channel", Message: "must contain letters, numbers or symbols"}
+	if !utils.IsValidUTF8String(msg.Channel) {
+		return &utils.FieldError{Field: "Channel", Message: "must contain letters, numbers or symbols"}
 	}
 
 	return nil
 }
 
 func (m *Member) VerifyMember() error {
-	if !isValidUTF8String(m.Guild) {
-		return &FieldError{Field: "Guild", Message: "must contain letters, numbers and symbols"}
+	if !utils.IsValidUTF8String(m.Guild) {
+		return &utils.FieldError{Field: "Guild", Message: "must contain letters, numbers and symbols"}
 	}
-	if !isValidUTF8String(m.Username) {
-		return &FieldError{Field: "Username", Message: "must contain only letters and numbers"}
+	if !utils.IsValidUTF8String(m.Username) {
+		return &utils.FieldError{Field: "Username", Message: "must contain only letters and numbers"}
 	}
-	if !isValidUTF8String(m.Nick) {
-		return &FieldError{Field: "Nick", Message: "must contain only letters and numbers"}
+	if !utils.IsValidUTF8String(m.Nick) {
+		return &utils.FieldError{Field: "Nick", Message: "must contain only letters and numbers"}
 	}
 
 	allowedStatuses := map[string]bool{"online": true, "offline": true, "idle": true, "dnd": true}
 	if !allowedStatuses[m.Status] {
-		return &FieldError{Field: "Status", Message: "invalid status value"}
+		return &utils.FieldError{Field: "Status", Message: "invalid status value"}
 	}
 
 	allowedColors := map[string]bool{"red": true, "blue": true, "yellow": true, "green": true, "black": true, "white": true, "pink": true, "purple": true}
-	if !isValidColor(m.User_color, allowedColors) {
-		return &FieldError{Field: "User_color", Message: "must be a valid hex or rgba color"}
+	if !utils.IsValidColor(m.User_color, allowedColors) {
+		return &utils.FieldError{Field: "User_color", Message: "must be a valid hex or rgba color"}
 	}
 
-	if !isValidURLOrBase64(m.Avatar) {
-		return &FieldError{Field: "Avatar", Message: "must be a valid URL or base64 string"}
+	if !utils.IsValidURLOrBase64(m.Avatar) {
+		return &utils.FieldError{Field: "Avatar", Message: "must be a valid URL or base64 string"}
 	}
 
-	if !isValidURLOrBase64(m.DisplayAvatar) {
-		return &FieldError{Field: "DisplayAvatar", Message: "must be a valid URL or base64 string"}
+	if !utils.IsValidURLOrBase64(m.DisplayAvatar) {
+		return &utils.FieldError{Field: "DisplayAvatar", Message: "must be a valid URL or base64 string"}
 	}
-	if !isValidURLOrBase64(m.Banner) {
-		return &FieldError{Field: "Banner", Message: "must be a valid URL or base64 string"}
+	if !utils.IsValidURLOrBase64(m.Banner) {
+		return &utils.FieldError{Field: "Banner", Message: "must be a valid URL or base64 string"}
 	}
-	if !isValidURLOrBase64(m.DisplayBanner) {
-		return &FieldError{Field: "DisplayBanner", Message: "must be a valid URL or base64 string"}
+	if !utils.IsValidURLOrBase64(m.DisplayBanner) {
+		return &utils.FieldError{Field: "DisplayBanner", Message: "must be a valid URL or base64 string"}
 	}
 
 	for _, message := range m.Messages {
-		if !isValidUTF8String(message.Content) {
-			return &FieldError{Field: "Message", Message: "must contain letters, numbers or symbols"}
+		if !utils.IsValidUTF8String(message.Content) {
+			return &utils.FieldError{Field: "Message", Message: "must contain letters, numbers or symbols"}
 		}
 	}
 

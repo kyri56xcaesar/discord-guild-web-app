@@ -9,14 +9,9 @@ import (
 
 	"kyri56xcaesar/discord_bots_app/internal/database"
 	"kyri56xcaesar/discord_bots_app/internal/models"
+	"kyri56xcaesar/discord_bots_app/internal/utils"
 
 	"github.com/gorilla/mux"
-)
-
-const (
-	typeMember string = "members"
-	typeBot    string = "bots"
-	typeLine   string = "lines"
 )
 
 func RootHandler(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +33,13 @@ func MembersHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		res, err := dbh.GetAllMembers()
+		var res []*models.Member
+		var err error
+		// Should check if parameters were given.
+		idsParam := r.URL.Query().Get("ids")
+
+		log.Printf("%s", idsParam)
+		res, err = dbh.GetAllMembers()
 		if err != nil {
 			RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve members")
 			return
@@ -103,11 +104,12 @@ func GMultipleData(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
 	dbh := database.GetConnector(DBName)
+	if dbh == nil {
+		RespondWithError(w, http.StatusInternalServerError, "Database connection failed")
+		return
+	}
 
-	dataT := strings.SplitN(r.URL.String(), "/", 4)[2]
-
-	log.Printf("DataT: %s", dataT)
-
+	// Should parse and identify search arguments.
 	idsParam := r.URL.Query().Get("ids")
 	if idsParam == "" {
 		RespondWithError(w, http.StatusBadRequest, "Must provide identifiers")
@@ -115,8 +117,22 @@ func GMultipleData(w http.ResponseWriter, r *http.Request) {
 	}
 	identifiers := strings.Split(idsParam, ",")
 
+	dbh.Select("", "members", map[string][]string{
+		"userid": {
+			"33",
+			"22",
+		},
+		"username": {
+			"KLANIAAAAS",
+			"JJJ",
+		},
+	}, true)
+
+	dataT := strings.SplitN(r.URL.String(), "/", 4)[2]
+	log.Printf("DataT: %s", dataT)
+
 	switch dataT {
-	case typeMember:
+	case database.TypeMember:
 		members, err := dbh.GetMultipleMembersByIdentifiers(identifiers)
 		if err != nil {
 			log.Printf("Error getting multiple %v. : %v", dataT, err)
@@ -124,7 +140,7 @@ func GMultipleData(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		RespondWithJSON(w, http.StatusOK, members)
-	case typeBot:
+	case database.TypeBot:
 		bots, err := dbh.GetMultipleBotsByIdentifiers(identifiers)
 		if err != nil {
 			log.Printf("Error getting multiple %v. : %v", dataT, err)
@@ -132,7 +148,7 @@ func GMultipleData(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		RespondWithJSON(w, http.StatusOK, bots)
-	case typeLine:
+	case database.TypeLine:
 		lines, err := dbh.GetMultipleLinesByIdentifiers(identifiers)
 		if err != nil {
 			log.Printf("Error getting multiple %v. : %v", dataT, err)
@@ -150,7 +166,10 @@ func UDMultipleData(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
 	dbh := database.GetConnector(DBName)
-
+	if dbh == nil {
+		RespondWithError(w, http.StatusInternalServerError, "Database connection failed")
+		return
+	}
 	dataT := strings.SplitN(strings.SplitN(r.URL.String(), "/", 4)[3], "?", 2)[0]
 
 	idsParam := r.URL.Query().Get("ids")
@@ -166,7 +185,7 @@ func UDMultipleData(w http.ResponseWriter, r *http.Request) {
 	)
 
 	switch dataT {
-	case typeMember:
+	case database.TypeMember:
 		switch r.Method {
 		case http.MethodDelete:
 			message, err = dbh.DeleteMultipleMembersByIdentifiers(identifiers)
@@ -174,7 +193,7 @@ func UDMultipleData(w http.ResponseWriter, r *http.Request) {
 		default:
 
 		}
-	case typeBot:
+	case database.TypeBot:
 		switch r.Method {
 		case http.MethodDelete:
 			message, err = dbh.DeleteMultipleBotsByIdentifiers(identifiers)
@@ -182,7 +201,7 @@ func UDMultipleData(w http.ResponseWriter, r *http.Request) {
 		default:
 
 		}
-	case typeLine:
+	case database.TypeLine:
 		switch r.Method {
 		case http.MethodDelete:
 			message, err = dbh.DeleteMultipleLinesByIdentifiers(identifiers)
@@ -210,13 +229,16 @@ func MemberHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	identifier := vars["identifier"]
 
-	if !IsAlphanumeric(identifier) {
+	if !utils.IsAlphanumeric(identifier) {
 		RespondWithError(w, http.StatusBadRequest, "Invalid identifier")
 		return
 	}
 
 	dbh := database.GetConnector(DBName)
-
+	if dbh == nil {
+		RespondWithError(w, http.StatusInternalServerError, "Database connection failed")
+		return
+	}
 	switch r.Method {
 	case http.MethodGet:
 		// Call ID
@@ -271,13 +293,13 @@ func DataIndexHandler(w http.ResponseWriter, r *http.Request) {
 	dataT := strings.SplitN(r.URL.String(), "/", 4)[3]
 
 	switch dataT {
-	case typeMember:
+	case database.TypeMember:
 
-		RespondWithJSON(w, http.StatusOK, keysSliceFromMap(database.AllowedMemberCols))
-	case typeBot:
-		RespondWithJSON(w, http.StatusOK, keysSliceFromMap(database.AllowedBotCols))
-	case typeLine:
-		RespondWithJSON(w, http.StatusOK, keysSliceFromMap(database.AllowedLineCols))
+		RespondWithJSON(w, http.StatusOK, utils.KeysSliceFromMap(database.AllowedMemberCols))
+	case database.TypeBot:
+		RespondWithJSON(w, http.StatusOK, utils.KeysSliceFromMap(database.AllowedBotCols))
+	case database.TypeLine:
+		RespondWithJSON(w, http.StatusOK, utils.KeysSliceFromMap(database.AllowedLineCols))
 	default:
 		// Shouldnt reach here...
 		RespondWithError(w, http.StatusInternalServerError, "Wierd Error.")
@@ -288,7 +310,10 @@ func DataHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
 	dbh := database.GetConnector(DBName)
-
+	if dbh == nil {
+		RespondWithError(w, http.StatusInternalServerError, "Database connection failed")
+		return
+	}
 	dataT := strings.SplitN(r.URL.String(), "/", 5)[3]
 
 	vars := mux.Vars(r)
@@ -301,7 +326,7 @@ func DataHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch dataT {
-	case typeMember:
+	case database.TypeMember:
 		data, err := dbh.GetMemberIdentifiers(identifier)
 		if err != nil {
 			log.Printf("Failed to get member data by identifier %v", identifier)
@@ -311,7 +336,7 @@ func DataHandler(w http.ResponseWriter, r *http.Request) {
 
 		RespondWithJSON(w, http.StatusOK, data)
 
-	case typeBot:
+	case database.TypeBot:
 		data, err := dbh.GetBotIdentifiers(identifier)
 		if err != nil {
 			log.Printf("Failed to get bot data by identifier %v", identifier)
@@ -321,7 +346,7 @@ func DataHandler(w http.ResponseWriter, r *http.Request) {
 
 		RespondWithJSON(w, http.StatusOK, data)
 
-	case typeLine:
+	case database.TypeLine:
 		data, err := dbh.GetLineIdentifiers(identifier)
 		if err != nil {
 			log.Printf("Failed to get line data by identifier %v", identifier)
@@ -346,7 +371,10 @@ func GuildHandler(w http.ResponseWriter, r *http.Request) {
 
 func BotHandler(w http.ResponseWriter, r *http.Request) {
 	dbh := database.GetConnector(DBName)
-
+	if dbh == nil {
+		RespondWithError(w, http.StatusInternalServerError, "Database connection failed")
+		return
+	}
 	vars := mux.Vars(r)
 	identifier := vars["identifier"]
 	log.Printf("%v request on path: %v with identifier %v", r.Method, r.URL.Path, identifier)
@@ -396,7 +424,10 @@ func BotsHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
 	dbh := database.GetConnector(DBName)
-
+	if dbh == nil {
+		RespondWithError(w, http.StatusInternalServerError, "Database connection failed")
+		return
+	}
 	switch r.Method {
 	case http.MethodGet:
 		res, err := dbh.GetAllBots()
@@ -457,7 +488,10 @@ func LinesHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
 	dbh := database.GetConnector(DBName)
-
+	if dbh == nil {
+		RespondWithError(w, http.StatusInternalServerError, "Database connection failed")
+		return
+	}
 	switch r.Method {
 	case http.MethodGet:
 		// Get everything
@@ -524,7 +558,10 @@ func LinesHandler(w http.ResponseWriter, r *http.Request) {
 
 func LineHandler(w http.ResponseWriter, r *http.Request) {
 	dbh := database.GetConnector(DBName)
-
+	if dbh == nil {
+		RespondWithError(w, http.StatusInternalServerError, "Database connection failed")
+		return
+	}
 	vars := mux.Vars(r)
 	identifier := vars["identifier"]
 	log.Printf("%v request on path: %v with identifier %v", r.Method, r.URL.Path, identifier)
@@ -579,7 +616,10 @@ func MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v (Metrics)", r.Method, r.URL.Path)
 
 	dbh := database.GetConnector(DBName)
-
+	if dbh == nil {
+		RespondWithError(w, http.StatusInternalServerError, "Database connection failed")
+		return
+	}
 	mtype := "all"
 	split := strings.SplitN(r.URL.Path, "/", 4)
 
