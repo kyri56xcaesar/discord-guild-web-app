@@ -21,11 +21,6 @@ func (dbh *DBHandler) InsertMember(u models.Member) (*models.Member, error) {
 		return nil, err
 	}
 
-	mu := &dbh.mu
-
-	mu.Lock()
-	defer mu.Unlock()
-
 	err = dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error getting the DB handler..." + err.Error())
@@ -79,25 +74,20 @@ func (dbh *DBHandler) InsertMember(u models.Member) (*models.Member, error) {
 	return &u, err
 }
 
-func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) (string, error) {
-	mu := &dbh.mu
-	mu.Lock()
-	defer mu.Unlock()
-
+func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) ([]models.Member, error) {
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error creating the DB handler: %v", err)
-		return "Failed to create DB handler", err
+		return nil, err
 	}
 	defer dbh.DB.Close()
-
 	db := dbh.DB
 
 	// Start a transaction
 	tx, err := db.Begin()
 	if err != nil {
 		log.Printf("Failed to begin transaction: %v", err)
-		return "Failed to begin transaction", err
+		return nil, err
 	}
 
 	// Prepare the SQL statement for inserting members
@@ -105,7 +95,7 @@ func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) (string, er
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		log.Printf("Failed to prepare statement: %v", err)
-		return "Failed to prepare statement", err
+		return nil, err
 	}
 	defer stmt.Close() // Ensure the statement is closed after use
 
@@ -165,19 +155,14 @@ func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) (string, er
 	// Commit the transaction even if some members were skipped
 	if err := tx.Commit(); err != nil {
 		log.Printf("Failed to commit transaction: %v", err)
-		return "Failed to commit transaction", err
+		return nil, err
 	}
 
 	// Return the number of successful insertions
-	return fmt.Sprintf("Successfully inserted %d members", successCount), nil
+	return members, nil
 }
 
 func (dbh *DBHandler) GetAllMembers() ([]*models.Member, error) {
-	mu := &dbh.mu
-
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error creating the DB handler..." + err.Error())
@@ -261,10 +246,6 @@ func (dbh *DBHandler) GetAllMembers() ([]*models.Member, error) {
 }
 
 func (dbh *DBHandler) GetMultipleMembersByIdentifiers(identifiers []string) ([]*models.Member, error) {
-	mu := &dbh.mu
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error creating the DB handler..." + err.Error())
@@ -351,10 +332,6 @@ func (dbh *DBHandler) GetMultipleMembersByIdentifiers(identifiers []string) ([]*
 }
 
 func (dbh *DBHandler) GetMemberIdentifiers(identifier string) ([]string, error) {
-	mu := &dbh.mu
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Print("There's been an error getting the DB handler! ", err.Error())
@@ -391,17 +368,11 @@ func (dbh *DBHandler) GetMemberIdentifiers(identifier string) ([]string, error) 
 }
 
 func (dbh *DBHandler) GetMemberByIdentifier(identifier string) (*models.Member, error) {
-	mu := &dbh.mu
-
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error creating the DB handler..." + err.Error())
 		return nil, err
 	}
-
 	defer dbh.DB.Close()
 
 	var row *sql.Row
@@ -461,11 +432,6 @@ func (dbh *DBHandler) GetMemberByIdentifier(identifier string) (*models.Member, 
 }
 
 func (dbh *DBHandler) DeleteMemberByIdentifier(identifier string) (string, error) {
-	mu := &dbh.mu
-
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error creating the DB handler..." + err.Error())
@@ -497,10 +463,6 @@ func (dbh *DBHandler) DeleteMemberByIdentifier(identifier string) (string, error
 }
 
 func (dbh *DBHandler) DeleteMultipleMembersByIdentifiers(identifiers []string) (string, error) {
-	mu := &dbh.mu
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error creating the DB handler... %v", err)
@@ -551,11 +513,6 @@ func (dbh *DBHandler) DeleteMultipleMembersByIdentifiers(identifiers []string) (
 }
 
 func (dbh *DBHandler) UpdateMemberByIdentifier(u models.Member, identifier string) (string, error) {
-	mu := &dbh.mu
-
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error creating the DB handler..." + err.Error())

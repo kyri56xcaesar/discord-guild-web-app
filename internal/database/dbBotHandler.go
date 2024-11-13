@@ -13,11 +13,6 @@ import (
 
 // Bots
 func (dbh *DBHandler) GetAllBots() ([]*models.Bot, error) {
-	mu := &dbh.mu
-
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error creating the DB handler..." + err.Error())
@@ -41,7 +36,7 @@ func (dbh *DBHandler) GetAllBots() ([]*models.Bot, error) {
 
 		bot := &models.Bot{}
 
-		if err := rows.Scan(bot.PtrsFieldsDB()); err != nil {
+		if err := rows.Scan(bot.PtrsFieldsDB()...); err != nil {
 			log.Printf("There's been an error scanning a user from the database." + err.Error())
 			return nil, err
 		}
@@ -75,10 +70,6 @@ func (dbh *DBHandler) GetAllBots() ([]*models.Bot, error) {
 }
 
 func (dbh *DBHandler) GetMultipleBotsByIdentifiers(identifiers []string) ([]*models.Bot, error) {
-	mu := &dbh.mu
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error creating the DB handler..." + err.Error())
@@ -138,10 +129,6 @@ func (dbh *DBHandler) GetMultipleBotsByIdentifiers(identifiers []string) ([]*mod
 }
 
 func (dbh *DBHandler) InsertMultipleBots(bots []models.Bot) (string, error) {
-	mu := &dbh.mu
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error creating the DB handler: %v", err)
@@ -223,10 +210,6 @@ func (dbh *DBHandler) InsertMultipleBots(bots []models.Bot) (string, error) {
 }
 
 func (dbh *DBHandler) GetBotIdentifiers(identifier string) ([]string, error) {
-	mu := &dbh.mu
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Print("There's been an error getting the DB handler! ", err.Error())
@@ -264,10 +247,6 @@ func (dbh *DBHandler) GetBotIdentifiers(identifier string) ([]string, error) {
 }
 
 func (dbh *DBHandler) GetBotByIdentifier(identifier string) (*models.Bot, error) {
-	mu := &dbh.mu
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Print("There's been an error getting the DB handler! ", err.Error())
@@ -313,11 +292,6 @@ func (dbh *DBHandler) InsertBot(b *models.Bot) (string, error) {
 		return "0", err
 	}
 
-	mu := &dbh.mu
-
-	mu.Lock()
-	defer mu.Unlock()
-
 	err = dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error getting the DB handler..." + err.Error())
@@ -362,11 +336,6 @@ func (dbh *DBHandler) InsertBot(b *models.Bot) (string, error) {
 }
 
 func (dbh *DBHandler) UpdateBotByIdentifier(b *models.Bot, identifier string) (string, error) {
-	mu := &dbh.mu
-
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error getting the DB handler..." + err.Error())
@@ -392,11 +361,6 @@ func (dbh *DBHandler) UpdateBotByIdentifier(b *models.Bot, identifier string) (s
 }
 
 func (dbh *DBHandler) DeleteBotByIdentifier(identifier string) (string, error) {
-	mu := &dbh.mu
-
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error getting the DB handler..." + err.Error())
@@ -421,10 +385,6 @@ func (dbh *DBHandler) DeleteBotByIdentifier(identifier string) (string, error) {
 }
 
 func (dbh *DBHandler) DeleteMultipleBotsByIdentifiers(identifiers []string) (string, error) {
-	mu := &dbh.mu
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error creating the DB handler... %v", err)
@@ -475,10 +435,6 @@ func (dbh *DBHandler) DeleteMultipleBotsByIdentifiers(identifiers []string) (str
 }
 
 func (dbh *DBHandler) GetLineIdentifiers(identifier string) ([]string, error) {
-	mu := &dbh.mu
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Print("There's been an error getting the DB handler! ", err.Error())
@@ -516,10 +472,6 @@ func (dbh *DBHandler) GetLineIdentifiers(identifier string) ([]string, error) {
 
 // Lines
 func (dbh *DBHandler) GetBotLines() ([]models.Line, error) {
-	mu := &dbh.mu
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Print("There's been an error getting the DB handler! ", err.Error())
@@ -550,10 +502,6 @@ func (dbh *DBHandler) GetBotLines() ([]models.Line, error) {
 }
 
 func (dbh *DBHandler) GetMultipleLinesByIdentifiers(identifiers []string) ([]models.Line, error) {
-	mu := &dbh.mu
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Print("There's been an error getting the DB handler! ", err.Error())
@@ -588,10 +536,6 @@ func (dbh *DBHandler) GetMultipleLinesByIdentifiers(identifiers []string) ([]mod
 }
 
 func (dbh *DBHandler) InsertMultipleLines(lines []models.Line) (string, error) {
-	mu := &dbh.mu
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error getting the DB handler: %v", err)
@@ -653,10 +597,6 @@ func (dbh *DBHandler) InsertMultipleLines(lines []models.Line) (string, error) {
 }
 
 func (dbh *DBHandler) GetBotLineByIdentifier(identifier string) (*models.Line, error) {
-	mu := &dbh.mu
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Print("There's been an error getting the DB handler! ", err.Error())
@@ -683,11 +623,6 @@ func (dbh *DBHandler) InsertLine(l *models.Line) (string, error) {
 		return "0", err
 	}
 
-	mu := &dbh.mu
-
-	mu.Lock()
-	defer mu.Unlock()
-
 	err = dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error getting the DB handler..." + err.Error())
@@ -713,11 +648,6 @@ func (dbh *DBHandler) InsertLine(l *models.Line) (string, error) {
 }
 
 func (dbh *DBHandler) UpdateLineByIdentifier(l models.Line, identifier string) (string, error) {
-	mu := &dbh.mu
-
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error getting the DB handler..." + err.Error())
@@ -743,11 +673,6 @@ func (dbh *DBHandler) UpdateLineByIdentifier(l models.Line, identifier string) (
 }
 
 func (dbh *DBHandler) DeleteLineByIdentifier(identifier string) (string, error) {
-	mu := &dbh.mu
-
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error getting the DB handler..." + err.Error())
@@ -772,10 +697,6 @@ func (dbh *DBHandler) DeleteLineByIdentifier(identifier string) (string, error) 
 }
 
 func (dbh *DBHandler) DeleteMultipleLinesByIdentifiers(identifiers []string) (string, error) {
-	mu := &dbh.mu
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error creating the DB handler... %v", err)

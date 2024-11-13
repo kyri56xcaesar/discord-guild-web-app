@@ -5,15 +5,9 @@ import (
 	"fmt"
 	"log"
 	"strings"
-
-	"kyri56xcaesar/discord_bots_app/internal/models"
 )
 
 func (dbh *DBHandler) Metrics(mtype string) (string, error) {
-	mu := &dbh.mu
-	mu.Lock()
-	defer mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error creating the DB handler: %v", err)
@@ -41,7 +35,7 @@ func (dbh *DBHandler) Metrics(mtype string) (string, error) {
 func (dbh *DBHandler) Search(tableName string) {
 }
 
-func (dbh *DBHandler) Select(columns, tableName string, identifiers map[string][]string, relational bool) (*sql.Rows, error) {
+func (dbh *DBHandler) Select(tableName, columns string, identifiers map[string][]string, limit int, sortField, order string) (*sql.Rows, error) {
 	if tableName == "" {
 		return nil, fmt.Errorf("No tablename given.")
 	}
@@ -56,45 +50,30 @@ func (dbh *DBHandler) Select(columns, tableName string, identifiers map[string][
 	var whereClauses []string
 	var args []interface{}
 	i := 1
-	for key, value := range identifiers {
-		whereClauses = append(whereClauses, "(")
-		for index, param := range value {
-			if index < len(value)-1 {
-				whereClauses = append(whereClauses, fmt.Sprintf("%s = ? OR ", key))
-			} else {
-				whereClauses = append(whereClauses, fmt.Sprintf("%s = ?", key))
+
+	if identifiers != nil {
+		for key, value := range identifiers {
+			whereClauses = append(whereClauses, "(")
+			for index, param := range value {
+				if index < len(value)-1 {
+					whereClauses = append(whereClauses, fmt.Sprintf("%s = ? OR ", key))
+				} else {
+					whereClauses = append(whereClauses, fmt.Sprintf("%s = ?", key))
+				}
+				args = append(args, param)
 			}
-			args = append(args, param)
+			if len(identifiers) > i {
+				whereClauses = append(whereClauses, ") AND ")
+			} else {
+				whereClauses = append(whereClauses, ")")
+			}
+			i++
 		}
-		if len(identifiers) > i {
-			whereClauses = append(whereClauses, ") AND ")
-		} else {
-			whereClauses = append(whereClauses, ")")
-		}
-		i++
+
+		query = fmt.Sprintf("%s WHERE %s", query, strings.Join(whereClauses, ""))
+
 	}
-
-	query = fmt.Sprintf("%s WHERE %s", query, strings.Join(whereClauses, ""))
-
 	log.Print(query)
-
-	rows, err := dbh.DB.Query(query, args...)
-	if err != nil {
-		log.Printf("Failed to execute query")
-		return nil, err
-	}
-
-	for rows.Next() {
-		member := models.Member{}
-
-		err := rows.Scan(&member)
-		if err != nil {
-			log.Printf("error scanning result")
-			return nil, err
-		} else {
-			log.Print(member)
-		}
-	}
 
 	// Members, Bots or Lines
 

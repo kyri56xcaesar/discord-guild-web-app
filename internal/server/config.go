@@ -90,7 +90,5 @@ func (cfg *EnvConfig) toString() string {
 		}
 	}
 
-	strBuilder.WriteString("\n")
-
 	return strBuilder.String()
 }

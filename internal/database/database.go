@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"sync"
+
+	"kyri56xcaesar/discord_bots_app/internal/utils"
 )
 
 // Helpers
@@ -78,7 +80,6 @@ CREATE TABLE IF NOT EXISTS lines (
 type DBHandler struct {
 	DB     *sql.DB
 	dbFile string
-	mu     sync.Mutex
 }
 
 // Health checking funcs
@@ -106,6 +107,11 @@ type IndexInfo struct {
 }
 
 var (
+	DefaultLimit int    = 100
+	DefaultOrder string = "desc"
+
+	AllKeys []string
+
 	AllowedMemberCols = map[string]bool{
 		// Members
 		"ids":        true,
@@ -194,18 +200,17 @@ func InitDB(dbpath string, initScript string) error {
 		logBuilder.WriteString(fmt.Sprintf("[INIT DB] Script execution result: %s\n", res))
 
 	}
-	logBuilder.WriteString("\n")
-	log.Print(logBuilder.String())
 
+	AllKeys = utils.AppendKeys([]map[string]bool{AllowedMemberCols, AllowedBotCols, AllowedLineCols})
+	logBuilder.WriteString("[INIT DB] Key fields initialized.\n")
+
+	log.Print(logBuilder.String())
 	return err
 }
 
 // Sql execution funcs
 // Should be used to initialize the database table
 func (dbh *DBHandler) RunSQLscript(sql string) (string, error) {
-	dbh.mu.Lock()
-	defer dbh.mu.Unlock()
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error opening the DB connection." + err.Error())
@@ -230,9 +235,6 @@ func (dbh *DBHandler) RunSQLscript(sql string) (string, error) {
 func DBHealthCheck(dbpath string) *SchemaInfo {
 	// Open the database connection
 	dbh := GetConnector(dbpath)
-
-	dbh.mu.Lock()
-	defer dbh.mu.Unlock()
 
 	err := dbh.openConnection()
 	if err != nil {
@@ -338,4 +340,12 @@ func DBHealthCheck(dbpath string) *SchemaInfo {
 
 	// Return the schema info
 	return &schema
+}
+
+func WithMutex[T any](fn func(t T) (T, error), arg T) (T, error) {
+	mu := sync.Mutex{}
+	mu.Lock()
+	defer mu.Unlock()
+
+	return fn(arg)
 }

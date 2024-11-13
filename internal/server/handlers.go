@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"kyri56xcaesar/discord_bots_app/internal/database"
@@ -102,6 +103,7 @@ func MembersHandler(w http.ResponseWriter, r *http.Request) {
 
 func GMultipleData(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
+	var err error
 
 	dbh := database.GetConnector(DBName)
 	if dbh == nil {
@@ -109,57 +111,56 @@ func GMultipleData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Should parse and identify search arguments.
-	idsParam := r.URL.Query().Get("ids")
-	if idsParam == "" {
-		RespondWithError(w, http.StatusBadRequest, "Must provide identifiers")
+	cols := r.URL.Query().Get("cols")
+	if len(cols) > 0 && !utils.IsAlphanumericPlus(cols) {
+		log.Printf("Some form of banned character.")
+		RespondWithError(w, http.StatusBadRequest, "Something is fishy")
 		return
 	}
-	identifiers := strings.Split(idsParam, ",")
 
-	dbh.Select("", "members", map[string][]string{
-		"userid": {
-			"33",
-			"22",
-		},
-		"username": {
-			"KLANIAAAAS",
-			"JJJ",
-		},
-	}, true)
-
-	dataT := strings.SplitN(r.URL.String(), "/", 4)[2]
-	log.Printf("DataT: %s", dataT)
-
-	switch dataT {
-	case database.TypeMember:
-		members, err := dbh.GetMultipleMembersByIdentifiers(identifiers)
-		if err != nil {
-			log.Printf("Error getting multiple %v. : %v", dataT, err)
-			RespondWithError(w, http.StatusInternalServerError, "Error getting data")
-			return
+	empty := true
+	params := make(map[string][]string, len(database.AllKeys))
+	for _, v := range database.AllKeys {
+		keyParams := strings.Split(r.URL.Query().Get(v), ", ")
+		if !utils.IsSliceEmpty(keyParams) {
+			params[v] = append(params[v], keyParams...)
+			empty = false
 		}
-		RespondWithJSON(w, http.StatusOK, members)
-	case database.TypeBot:
-		bots, err := dbh.GetMultipleBotsByIdentifiers(identifiers)
-		if err != nil {
-			log.Printf("Error getting multiple %v. : %v", dataT, err)
-			RespondWithError(w, http.StatusInternalServerError, "Error getting data")
-			return
-		}
-		RespondWithJSON(w, http.StatusOK, bots)
-	case database.TypeLine:
-		lines, err := dbh.GetMultipleLinesByIdentifiers(identifiers)
-		if err != nil {
-			log.Printf("Error getting multiple %v. : %v", dataT, err)
-			RespondWithError(w, http.StatusInternalServerError, "Error getting data")
-			return
-		}
-		RespondWithJSON(w, http.StatusOK, lines)
-	default:
-		// Creazy to be here
-		RespondWithError(w, http.StatusInternalServerError, "Wierd error")
 	}
+	// if empty it will return all...,
+	if empty {
+		params = nil
+	}
+
+	var sort_field, order string
+	sortfield := r.URL.Query().Get("sort")
+	if len(sortfield) > 0 {
+		fields := strings.SplitN(sortfield, ",", 2)
+		sort_field = fields[0]
+		order = fields[1]
+		if len(order) == 0 {
+			order = database.DefaultOrder
+		}
+	}
+
+	limit := database.DefaultLimit
+	limitfield := r.URL.Query().Get("limit")
+	if len(limitfield) > 0 {
+		limit, err = strconv.Atoi(limitfield)
+		if err != nil {
+			limit = database.DefaultLimit
+		}
+	}
+
+	dataT := strings.SplitN(strings.SplitN(r.URL.String(), "/", 4)[3], "?", 2)[0]
+
+	log.Printf("Order: %v", order)
+	log.Printf("SortField: %v", sort_field)
+	log.Printf("Limit: %v", limit)
+	log.Printf("Cols: %s", cols)
+	log.Printf("Type: %s", dataT)
+	log.Printf("Keys: %v", utils.KeysSliceFromMap(params))
+	dbh.Select(cols, dataT, params, limit, sort_field, order)
 }
 
 func UDMultipleData(w http.ResponseWriter, r *http.Request) {

@@ -36,6 +36,18 @@ type Message struct {
 	UID       int    `json:"userid"`
 }
 
+func (mb *Member) PtrFieldsDB() []any {
+	return []any{&mb.ID, &mb.Guild, &mb.Username, &mb.Nick, &mb.Avatar, &mb.DisplayAvatar, &mb.Banner, &mb.DisplayBanner, &mb.User_color, &mb.JoinedAt, &mb.Status, &mb.MsgCount}
+}
+
+func (r *Role) PtrFieldsDB() []any {
+	return []any{&r.Role_name, &r.Color, &r.ID, &r.UID}
+}
+
+func (msg *Message) PtrFieldsDB() []any {
+	return []any{&msg.Content, &msg.Channel, &msg.CreatedAt, &msg.ID, &msg.UID}
+}
+
 func (msg *Message) VerifyMessage() error {
 	if !utils.IsValidUTF8String(msg.Content) {
 		return &utils.FieldError{Field: "Content", Message: "must contain letters, numbers or symbols"}

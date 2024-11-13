@@ -16,7 +16,7 @@ func (e *FieldError) Error() string {
 	return fmt.Sprintf("Invalid field %q: %s", e.Field, e.Message)
 }
 
-// utils
+// Security related utils
 func IsNumeric(s string) bool {
 	re := regexp.MustCompile(`^[0-9]+$`)
 	return re.MatchString(s)
@@ -24,6 +24,11 @@ func IsNumeric(s string) bool {
 
 func IsAlphanumeric(s string) bool {
 	re := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
+	return re.MatchString(s)
+}
+
+func IsAlphanumericPlus(s string) bool {
+	re := regexp.MustCompile(`^[a-zA-Z0-9,*?=/\\]+$`)
 	return re.MatchString(s)
 }
 
@@ -58,6 +63,7 @@ func isValidBase64(s string) bool {
 	return err == nil
 }
 
+// Datatype conversions and checks utils
 func InterfaceSlice(slice []string) []interface{} {
 	interfaces := make([]interface{}, len(slice))
 	for i, v := range slice {
@@ -72,4 +78,40 @@ func KeysSliceFromMap[K comparable, V any](mymap map[K]V) []K {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+func AppendKeys[K comparable, V any](mapslice []map[K]V) []K {
+	var allKeys []K
+	for _, v := range mapslice {
+		allKeys = append(allKeys, KeysSliceFromMap(v)...)
+	}
+
+	return allKeys
+}
+
+func IsMapSliceEmpty[K comparable, V any](mapslice []map[K]V, isEmpty func(v V) bool) bool {
+	for _, m := range mapslice {
+		if !IsMapValuesEmpty(m, isEmpty) {
+			return false
+		}
+	}
+	return true
+}
+
+func IsMapValuesEmpty[K comparable, V any](m map[K]V, isEmpty func(v V) bool) bool {
+	for _, v := range m {
+		if !isEmpty(v) {
+			return false
+		}
+	}
+	return true
+}
+
+func IsSliceEmpty(v []string) bool {
+	for _, str := range v {
+		if len(str) != 0 {
+			return false
+		}
+	}
+	return true
 }

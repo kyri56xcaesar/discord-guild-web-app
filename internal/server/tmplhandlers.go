@@ -2,11 +2,12 @@ package server
 
 import (
 	"html/template"
-	"kyri56xcaesar/discord_bots_app/internal/database"
 	"log"
 	"net/http"
 	"path/filepath"
 	"sort"
+
+	"kyri56xcaesar/discord_bots_app/internal/database"
 )
 
 // Serve bots.html
