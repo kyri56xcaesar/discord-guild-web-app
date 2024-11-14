@@ -19,26 +19,26 @@ CREATE TABLE IF NOT EXISTS members
 	displaybannerurl TEXT,
 	usercolor TEXT,
 	joinedat TEXT,
-	userstatus TEXT,
+	status TEXT,
 	msgcount INTEGER
 );
 
 -- DROP TABLE bots;
 CREATE TABLE IF NOT EXISTS bots (
-	botid integer primary key AUTOINCREMENT,
-	botguild varchar(255),
-    botname varchar(255),
+	id integer primary key AUTOINCREMENT,
+	guild varchar(255),
+  username varchar(255),
 	avatarurl varchar(255),
 	bannerurl varchar(255),
-    createdat varchar(255),
+  createdat varchar(255),
 	author varchar(255),
-    botstatus varchar(255),
-    isSinger boolean
+  status varchar(255),
+  issinger boolean
 
 );
 
 CREATE TABLE IF NOT EXISTS lines (
-	lineid integer primary key AUTOINCREMENT,
+	id integer primary key AUTOINCREMENT,
 	bid integer,
 	phrase text,
 	author varchar(255),

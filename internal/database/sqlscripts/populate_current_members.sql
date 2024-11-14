@@ -1,5 +1,5 @@
 INSERT INTO members 
-  (guild, username, nickname, avatarurl, displayavatarurl, bannerurl, displaybannerurl, usercolor, joinedat, userstatus, msgcount)
+  (guild, username, nickname, avatarurl, displayavatarurl, bannerurl, displaybannerurl, usercolor, joinedat, status, msgcount)
 VALUES
   ("$DADS", "Test1", "T1", "https://picsum.photos/id/237/200/300", "None", "None", "None", "#FFFFFF", "2020-01-07", "online", 102),
   ("$DADS", "Test2", "T2", "https://picsum.photos/id/238/200/300", "None", "None", "None", "#FFFFFF", "2020-01-06", "online", 101),

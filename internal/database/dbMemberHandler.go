@@ -28,10 +28,10 @@ func (dbh *DBHandler) InsertMember(u models.Member) (*models.Member, error) {
 	}
 	defer dbh.DB.Close()
 
-	res, err := dbh.DB.Exec(`INSERT INTO members (guild, username, nickname, avatarurl, displayavatarurl, bannerurl, displaybannerurl, usercolor, joinedat, userstatus, msgcount) 
+	res, err := dbh.DB.Exec(`INSERT INTO members (guild, username, nickname, avatarurl, displayavatarurl, bannerurl, displaybannerurl, usercolor, joinedat, status, msgcount) 
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		u.Guild, u.Username, u.Nick, u.Avatar, u.DisplayBanner, u.Banner,
-		u.DisplayBanner, u.User_color, u.JoinedAt, u.Status, u.MsgCount)
+		u.Guild, u.Username, u.Nickname, u.Avatarurl, u.Displaybannerurl, u.Bannerurl,
+		u.Displaybannerurl, u.Usercolor, u.Joinedat, u.Status, u.Msgcount)
 	if err != nil {
 		log.Printf("There's been an error inserting the member %v in the DB."+err.Error(), u)
 		return nil, err
@@ -43,14 +43,14 @@ func (dbh *DBHandler) InsertMember(u models.Member) (*models.Member, error) {
 		return nil, err
 	}
 
-	u.ID = int(lastId)
+	u.Id = int(lastId)
 
 	// Insert the Roles and Messages now
 	var successMCount, successRCount int
-	if u.Messages != nil {
-		for _, msg := range u.Messages {
+	if u.Usermessages != nil {
+		for _, msg := range u.Usermessages {
 			_, err := dbh.DB.Exec(`INSERT INTO messages (userid, content, channel, createdat)
-			VALUES (?, ?, ?, ?)`, lastId, msg.Content, msg.Channel, msg.CreatedAt)
+			VALUES (?, ?, ?, ?)`, lastId, msg.Content, msg.Channel, msg.Createdat)
 			if err != nil {
 				log.Printf("Error inserting message %v into the database", msg)
 			}
@@ -58,10 +58,10 @@ func (dbh *DBHandler) InsertMember(u models.Member) (*models.Member, error) {
 		}
 	}
 
-	if u.Roles != nil {
-		for _, role := range u.Roles {
+	if u.Userroles != nil {
+		for _, role := range u.Userroles {
 			_, err := dbh.DB.Exec(`INSERT INTO roles (userid, rolename, rolecolor) VALUES (?, ?, ?)`,
-				lastId, role.Role_name, role.Role_name)
+				lastId, role.Rolename, role.Rolename)
 			if err != nil {
 				log.Printf("Error inserting role %v into the database", role)
 			}
@@ -69,7 +69,7 @@ func (dbh *DBHandler) InsertMember(u models.Member) (*models.Member, error) {
 		}
 	}
 
-	log.Printf("Inserted %d/%d roles, %d/%d messages.", successRCount, len(u.Roles), successMCount, len(u.Messages))
+	log.Printf("Inserted %d/%d roles, %d/%d messages.", successRCount, len(u.Userroles), successMCount, len(u.Usermessages))
 
 	return &u, err
 }
@@ -91,7 +91,7 @@ func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) ([]models.M
 	}
 
 	// Prepare the SQL statement for inserting members
-	stmt, err := tx.Prepare(`INSERT INTO members (guild, username, nickname, avatarurl, displayavatarurl, bannerurl, displaybannerurl, usercolor, joinedat, userstatus, msgcount) 
+	stmt, err := tx.Prepare(`INSERT INTO members (guild, username, nickname, avatarurl, displayavatarurl, bannerurl, displaybannerurl, usercolor, joinedat, status, msgcount) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		log.Printf("Failed to prepare statement: %v", err)
@@ -111,8 +111,8 @@ func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) ([]models.M
 		}
 
 		// Execute the insert statement
-		res, err := stmt.Exec(u.Guild, u.Username, u.Nick, u.Avatar, u.DisplayAvatar, u.Banner,
-			u.DisplayBanner, u.User_color, u.JoinedAt, u.Status, u.MsgCount)
+		res, err := stmt.Exec(u.Guild, u.Username, u.Nickname, u.Avatarurl, u.Displayavatarurl, u.Bannerurl,
+			u.Displaybannerurl, u.Usercolor, u.Joinedat, u.Status, u.Msgcount)
 		if err != nil {
 			log.Printf("Failed to insert member %v: %v", u, err)
 			log.Printf("(Skipping)")
@@ -128,10 +128,10 @@ func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) ([]models.M
 		// Increment the success counter if a row was inserted
 		successCount++
 
-		if u.Messages != nil {
-			for _, msg := range u.Messages {
+		if u.Usermessages != nil {
+			for _, msg := range u.Usermessages {
 				_, err := dbh.DB.Exec(`INSERT INTO messages (userid, content, channel, createdat)
-			VALUES (?, ?, ?, ?)`, lastId, msg.Content, msg.Channel, msg.CreatedAt)
+			VALUES (?, ?, ?, ?)`, lastId, msg.Content, msg.Channel, msg.Createdat)
 				if err != nil {
 					log.Printf("Error inserting message %v into the database", msg)
 				}
@@ -139,10 +139,10 @@ func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) ([]models.M
 			}
 		}
 
-		if u.Roles != nil {
-			for _, role := range u.Roles {
+		if u.Userroles != nil {
+			for _, role := range u.Userroles {
 				_, err := dbh.DB.Exec(`INSERT INTO roles (userid, rolename, rolecolor) VALUES (?, ?, ?)`,
-					lastId, role.Role_name, role.Role_name)
+					lastId, role.Rolename, role.Rolename)
 				if err != nil {
 					log.Printf("Error inserting role %v into the database", role)
 				}
@@ -185,19 +185,15 @@ func (dbh *DBHandler) GetAllMembers() ([]*models.Member, error) {
 
 		member := &models.Member{}
 
-		if err := rows.Scan(&member.ID, &member.Guild, &member.Username, &member.Nick,
-			&member.Avatar, &member.DisplayAvatar,
-			&member.Banner, &member.DisplayBanner,
-			&member.User_color, &member.JoinedAt,
-			&member.Status, &member.MsgCount); err != nil {
+		if err := rows.Scan(member.PtrFieldsDB()...); err != nil {
 			log.Printf("There's been an error scanning a user from the database." + err.Error())
 			return nil, err
 		}
 
-		member.Roles = []models.Role{}
-		member.Messages = []models.Message{}
+		member.Userroles = []models.Role{}
+		member.Usermessages = []models.Message{}
 		members = append(members, member)
-		memberMap[member.ID] = member
+		memberMap[member.Id] = member
 	}
 
 	rrows, err := dbh.DB.Query("SELECT * FROM roles")
@@ -210,13 +206,13 @@ func (dbh *DBHandler) GetAllMembers() ([]*models.Member, error) {
 	for rrows.Next() {
 		var role models.Role
 
-		if err := rrows.Scan(&role.ID, &role.UID, &role.Role_name, &role.Color); err != nil {
+		if err := rrows.Scan(&role.Id, &role.Userid, &role.Rolename, &role.Rolecolor); err != nil {
 			log.Print("There's been an error scanning user roles from the database " + err.Error())
 			return nil, err
 		}
 
-		if member, exists := memberMap[role.UID]; exists {
-			member.Roles = append(member.Roles, role)
+		if member, exists := memberMap[role.Userid]; exists {
+			member.Userroles = append(member.Userroles, role)
 		}
 
 	}
@@ -231,13 +227,13 @@ func (dbh *DBHandler) GetAllMembers() ([]*models.Member, error) {
 	for mrows.Next() {
 		var message models.Message
 
-		if err := mrows.Scan(&message.ID, &message.UID, &message.Content, &message.Channel, &message.CreatedAt); err != nil {
+		if err := mrows.Scan(message.PtrFieldsDB()...); err != nil {
 			log.Print("There's been an error scanning user messages from the database " + err.Error())
 			return nil, err
 		}
 
-		if member, exists := memberMap[message.UID]; exists {
-			member.Messages = append(member.Messages, message)
+		if member, exists := memberMap[message.Userid]; exists {
+			member.Usermessages = append(member.Usermessages, message)
 		}
 
 	}
@@ -254,7 +250,7 @@ func (dbh *DBHandler) GetMultipleMembersByIdentifiers(identifiers []string) ([]*
 	defer dbh.DB.Close()
 
 	// queryUsername := "SELECT * FROM members WHERE username IN "
-	query := "SELECT * FROM members WHERE userid IN (?" + strings.Repeat(",?", len(identifiers)-1) + ")"
+	query := "SELECT * FROM members WHERE id IN (?" + strings.Repeat(",?", len(identifiers)-1) + ")"
 
 	// Execute the query with the provided identifiers
 	rows, err := dbh.DB.Query(query, utils.InterfaceSlice(identifiers))
@@ -271,19 +267,15 @@ func (dbh *DBHandler) GetMultipleMembersByIdentifiers(identifiers []string) ([]*
 
 		member := &models.Member{}
 
-		if err := rows.Scan(&member.ID, &member.Guild, &member.Username, &member.Nick,
-			&member.Avatar, &member.DisplayAvatar,
-			&member.Banner, &member.DisplayBanner,
-			&member.User_color, &member.JoinedAt,
-			&member.Status, &member.MsgCount); err != nil {
+		if err := rows.Scan(member.PtrFieldsDB()...); err != nil {
 			log.Printf("There's been an error scanning a user from the database." + err.Error())
 			return nil, err
 		}
 
-		member.Roles = []models.Role{}
-		member.Messages = []models.Message{}
+		member.Userroles = []models.Role{}
+		member.Usermessages = []models.Message{}
 		members = append(members, member)
-		memberMap[member.ID] = member
+		memberMap[member.Id] = member
 	}
 
 	rrows, err := dbh.DB.Query("SELECT * FROM roles")
@@ -296,13 +288,13 @@ func (dbh *DBHandler) GetMultipleMembersByIdentifiers(identifiers []string) ([]*
 	for rrows.Next() {
 		var role models.Role
 
-		if err := rrows.Scan(&role.ID, &role.UID, &role.Role_name, &role.Color); err != nil {
+		if err := rrows.Scan(&role.Id, &role.Userid, &role.Rolename, &role.Rolecolor); err != nil {
 			log.Print("There's been an error scanning user roles from the database " + err.Error())
 			return nil, err
 		}
 
-		if member, exists := memberMap[role.UID]; exists {
-			member.Roles = append(member.Roles, role)
+		if member, exists := memberMap[role.Userid]; exists {
+			member.Userroles = append(member.Userroles, role)
 		}
 
 	}
@@ -317,13 +309,13 @@ func (dbh *DBHandler) GetMultipleMembersByIdentifiers(identifiers []string) ([]*
 	for mrows.Next() {
 		var message models.Message
 
-		if err := mrows.Scan(&message.ID, &message.UID, &message.Content, &message.Channel, &message.CreatedAt); err != nil {
+		if err := mrows.Scan(message.PtrFieldsDB()...); err != nil {
 			log.Print("There's been an error scanning user messages from the database " + err.Error())
 			return nil, err
 		}
 
-		if member, exists := memberMap[message.UID]; exists {
-			member.Messages = append(member.Messages, message)
+		if member, exists := memberMap[message.Userid]; exists {
+			member.Usermessages = append(member.Usermessages, message)
 		}
 
 	}
@@ -384,10 +376,10 @@ func (dbh *DBHandler) GetMemberByIdentifier(identifier string) (*models.Member, 
 	}
 
 	member := models.Member{}
-	member.Roles = []models.Role{}
-	member.Messages = []models.Message{}
+	member.Userroles = []models.Role{}
+	member.Usermessages = []models.Message{}
 
-	if err := row.Scan(&member.ID, &member.Guild, &member.Username, &member.Nick, &member.Avatar, &member.DisplayAvatar, &member.Banner, &member.DisplayBanner, &member.User_color, &member.JoinedAt, &member.Status, &member.MsgCount); err != nil {
+	if err := row.Scan(member.PtrFieldsDB()...); err != nil {
 		if err == sql.ErrNoRows {
 			log.Printf("Member not found: %v", identifier)
 			return nil, nil
@@ -396,35 +388,35 @@ func (dbh *DBHandler) GetMemberByIdentifier(identifier string) (*models.Member, 
 		return nil, err
 	}
 
-	rrows, err := dbh.DB.Query("SELECT * FROM roles WHERE userid = ?", member.ID)
+	rrows, err := dbh.DB.Query("SELECT * FROM roles WHERE userid = ?", member.Id)
 	if err == nil {
 		defer rrows.Close()
 
 		for rrows.Next() {
 			var role models.Role
 
-			if err := rrows.Scan(&role.ID, &role.UID, &role.Role_name, &role.Color); err != nil {
-				log.Printf("There's been an error scanning a role for userid %v %v", member.ID, err.Error())
+			if err := rrows.Scan(&role.Id, &role.Userid, &role.Rolename, &role.Rolecolor); err != nil {
+				log.Printf("There's been an error scanning a role for userid %v %v", member.Id, err.Error())
 				break
 			}
 
-			member.Roles = append(member.Roles, role)
+			member.Userroles = append(member.Userroles, role)
 		}
 	}
 
-	mrows, err := dbh.DB.Query("SELECT * FROM messages WHERE userid = ?", member.ID)
+	mrows, err := dbh.DB.Query("SELECT * FROM messages WHERE userid = ?", member.Id)
 	if err == nil {
 		defer mrows.Close()
 
 		for mrows.Next() {
 			var message models.Message
 
-			if err := mrows.Scan(&message.ID, &message.UID, &message.Content, &message.Channel, &message.CreatedAt); err != nil {
-				log.Printf("There's been an error scanning a message for userid %v %v", member.ID, err.Error())
+			if err := mrows.Scan(message.PtrFieldsDB()...); err != nil {
+				log.Printf("There's been an error scanning a message for userid %v %v", member.Id, err.Error())
 				break
 			}
 
-			member.Messages = append(member.Messages, message)
+			member.Usermessages = append(member.Usermessages, message)
 		}
 	}
 
@@ -526,15 +518,15 @@ func (dbh *DBHandler) UpdateMemberByIdentifier(u models.Member, identifier strin
 	if utils.IsNumeric(identifier) {
 		res, err = dbh.DB.Exec(`UPDATE members SET guild = ?, id = ?, username = ?, nickname = ?, avatarurl = ?, 
 		displayavatarurl = ?, bannerurl = ?, displaybannerurl = ?, usercolor, 
-		joinedat = ?, userstatus = ?, msgcount = ? WHERE id = ?`,
-			u.Guild, u.ID, u.Username, u.Nick, u.Avatar, u.DisplayBanner, u.Banner,
-			u.DisplayBanner, u.User_color, u.JoinedAt, u.Status, u.MsgCount, identifier)
+		joinedat = ?, status = ?, msgcount = ? WHERE id = ?`,
+			u.Guild, u.Id, u.Username, u.Nickname, u.Avatarurl, u.Displaybannerurl, u.Bannerurl,
+			u.Displaybannerurl, u.Usercolor, u.Joinedat, u.Status, u.Msgcount, identifier)
 	} else {
 		res, err = dbh.DB.Exec(`UPDATE members SET guild = ?, id = ?, username = ?, nickname = ?, avatarurl = ?, 
 		displayavatarurl = ?, bannerurl = ?, displaybannerurl = ?, usercolor, 
-		joinedat = ?, userstatus = ?, msgcount = ? WHERE username = ?`,
-			u.Guild, u.ID, u.Username, u.Nick, u.Avatar, u.DisplayBanner, u.Banner,
-			u.DisplayBanner, u.User_color, u.JoinedAt, u.Status, u.MsgCount, identifier)
+		joinedat = ?, status = ?, msgcount = ? WHERE username = ?`,
+			u.Guild, u.Id, u.Username, u.Nickname, u.Avatarurl, u.Displaybannerurl, u.Bannerurl,
+			u.Displaybannerurl, u.Usercolor, u.Joinedat, u.Status, u.Msgcount, identifier)
 	}
 
 	if err != nil {

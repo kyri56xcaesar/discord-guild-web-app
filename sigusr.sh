@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROCESS_NAME=myapp
+PROCESS_NAME=discordwebapp
 RESTART=false
 SCRIPT_PATH=""
 CONFIG_PATH=""

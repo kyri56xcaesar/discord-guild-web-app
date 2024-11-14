@@ -111,17 +111,21 @@ func GMultipleData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cols := r.URL.Query().Get("cols")
-	if len(cols) > 0 && !utils.IsAlphanumericPlus(cols) {
-		log.Printf("Some form of banned character.")
-		RespondWithError(w, http.StatusBadRequest, "Something is fishy")
-		return
+	var cols []string
+	colfields := r.URL.Query().Get("cols")
+	if len(colfields) > 0 {
+		cols = strings.Split(colfields, ",")
+		if !utils.VerifyStrSlice(cols) {
+			log.Printf("Some form of banned character.")
+			RespondWithError(w, http.StatusBadRequest, "Something is fishy")
+			return
+		}
 	}
 
 	empty := true
 	params := make(map[string][]string, len(database.AllKeys))
 	for _, v := range database.AllKeys {
-		keyParams := strings.Split(r.URL.Query().Get(v), ", ")
+		keyParams := strings.Split(r.URL.Query().Get(v), ",")
 		if !utils.IsSliceEmpty(keyParams) {
 			params[v] = append(params[v], keyParams...)
 			empty = false
@@ -137,30 +141,38 @@ func GMultipleData(w http.ResponseWriter, r *http.Request) {
 	if len(sortfield) > 0 {
 		fields := strings.SplitN(sortfield, ",", 2)
 		sort_field = fields[0]
-		order = fields[1]
+		if len(fields) > 1 {
+			order = fields[1]
+		}
 		if len(order) == 0 {
 			order = database.DefaultOrder
 		}
 	}
 
-	limit := database.DefaultLimit
+	limit := 0
 	limitfield := r.URL.Query().Get("limit")
 	if len(limitfield) > 0 {
+
 		limit, err = strconv.Atoi(limitfield)
-		if err != nil {
+		if err != nil || limit > database.DefaultLimit {
 			limit = database.DefaultLimit
 		}
 	}
 
 	dataT := strings.SplitN(strings.SplitN(r.URL.String(), "/", 4)[3], "?", 2)[0]
+	// log.Printf("\nLimit: %v\nSort: %v\nOrder: %v\nParams: %v\nDataT: %v\nCols: %v\n", limit, sort_field, order, params, dataT, cols)
 
-	log.Printf("Order: %v", order)
-	log.Printf("SortField: %v", sort_field)
-	log.Printf("Limit: %v", limit)
-	log.Printf("Cols: %s", cols)
-	log.Printf("Type: %s", dataT)
-	log.Printf("Keys: %v", utils.KeysSliceFromMap(params))
-	dbh.Select(cols, dataT, params, limit, sort_field, order)
+	var data interface{}
+	data, err = dbh.Select(dataT, cols, params, limit, sort_field, order)
+	if err != nil {
+		RespondWithError(w, http.StatusBadRequest, "Failed to retrieve data")
+		return
+	} else if data == nil {
+		RespondWithJSON(w, http.StatusOK, "No results found")
+		return
+	}
+
+	RespondWithJSON(w, http.StatusOK, data)
 }
 
 func UDMultipleData(w http.ResponseWriter, r *http.Request) {

@@ -46,26 +46,26 @@ CREATE TABLE IF NOT EXISTS members
 	displaybannerurl TEXT,
 	usercolor TEXT,
 	joinedat TEXT,
-	userstatus TEXT,
+	status TEXT,
 	msgcount INTEGER
 );
 
 -- DROP TABLE bots;
 CREATE TABLE IF NOT EXISTS bots (
-	botid integer primary key AUTOINCREMENT,
-	botguild varchar(255),
-    botname varchar(255),
+	id integer primary key AUTOINCREMENT,
+	guild varchar(255),
+  username varchar(255),
 	avatarurl varchar(255),
 	bannerurl varchar(255),
-    createdat varchar(255),
+  createdat varchar(255),
 	author varchar(255),
-    botstatus varchar(255),
-    isSinger boolean
+  status varchar(255),
+  issinger boolean
 
 );
 
 CREATE TABLE IF NOT EXISTS lines (
-	lineid integer primary key AUTOINCREMENT,
+	id integer primary key AUTOINCREMENT,
 	bid integer,
 	phrase text,
 	author varchar(255),
@@ -114,30 +114,31 @@ var (
 
 	AllowedMemberCols = map[string]bool{
 		// Members
-		"ids":        true,
-		"guilds":     true,
-		"usernames":  true,
-		"nicknames":  true,
-		"avatarurls": true,
-		"usercolors": true,
-		"msgcounts":  true,
-		"joinedats":  true,
+		"id":         true,
+		"guild":      true,
+		"username":   true,
+		"nickname":   true,
+		"avatarurl":  true,
+		"usercolor":  true,
+		"msgcount":   true,
+		"joinedat":   true,
+		"userstatus": true,
 	}
 
 	AllowedBotCols = map[string]bool{
 		// Bots
-		"botids":   true,
-		"botnames": true,
-		"authors":  true,
+		"id":       true,
+		"username": true,
+		"author":   true,
 	}
 
 	AllowedLineCols = map[string]bool{
 		// Lines
-		"lineids": true,
-		"toids":   true,
-		"bids":    true,
-		"phrases": true,
-		"ltypes":  true,
+		"id":     true,
+		"toid":   true,
+		"bid":    true,
+		"phrase": true,
+		"ltype":  true,
 	}
 )
 

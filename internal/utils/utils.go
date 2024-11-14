@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strings"
 )
 
 type FieldError struct {
@@ -30,6 +31,33 @@ func IsAlphanumeric(s string) bool {
 func IsAlphanumericPlus(s string) bool {
 	re := regexp.MustCompile(`^[a-zA-Z0-9,*?=/\\]+$`)
 	return re.MatchString(s)
+}
+
+func VerifyStrSlice(s []string) bool {
+	valid := true
+	for _, str := range s {
+		valid = IsAlphanumeric(str)
+		if !valid {
+			return valid
+		}
+	}
+
+	return valid
+}
+
+func ToUpperFirstLetter(s string) string {
+	if s == "" {
+		return s
+	} else if len(s) == 1 {
+		return strings.ToUpper(s)
+	}
+
+	newStr := strings.ToLower(s)
+	newStr = strings.Join([]string{
+		strings.ToUpper(string(s[0])),
+		s[1:],
+	}, "")
+	return newStr
 }
 
 func IsValidUTF8String(s string) bool {

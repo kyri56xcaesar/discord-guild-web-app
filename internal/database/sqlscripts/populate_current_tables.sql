@@ -1,5 +1,5 @@
 INSERT INTO 
-    bots (botguild, botname, avatarurl, bannerurl, createdat, author, botstatus, isSinger)
+    bots (guild, username, avatarurl, bannerurl, createdat, author, status, issinger)
 VALUES 
     ('$dads', 'StoufBot', 'None', 'None', '2023-04-25', 'kyri56xcaesar', 'active', 0), -- id 1 25-4-2023
     ('$dads', 'KokeBot', 'None', 'None', '2023-04-25', 'kyri56xcaesar', 'active', 0), -- id 2 25-4-2023

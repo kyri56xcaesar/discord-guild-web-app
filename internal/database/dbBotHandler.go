@@ -36,14 +36,14 @@ func (dbh *DBHandler) GetAllBots() ([]*models.Bot, error) {
 
 		bot := &models.Bot{}
 
-		if err := rows.Scan(bot.PtrsFieldsDB()...); err != nil {
+		if err := rows.Scan(bot.PtrFieldsDB()...); err != nil {
 			log.Printf("There's been an error scanning a user from the database." + err.Error())
 			return nil, err
 		}
 
 		bot.Lines = []models.Line{}
 		bots = append(bots, bot)
-		botMap[bot.ID] = bot
+		botMap[bot.Id] = bot
 	}
 
 	lrows, err := dbh.DB.Query("SELECT * FROM lines")
@@ -56,12 +56,12 @@ func (dbh *DBHandler) GetAllBots() ([]*models.Bot, error) {
 	for lrows.Next() {
 		var line models.Line
 
-		if err := lrows.Scan(&line.ID, &line.BID, &line.Phrase, &line.Author, &line.To, &line.LineType, &line.CreatedAt); err != nil {
+		if err := lrows.Scan(line.PtrFieldsDB()...); err != nil {
 			log.Print("There's been an error scanning line. " + err.Error())
 			return bots, err
 		}
 
-		if bot, exists := botMap[line.BID]; exists {
+		if bot, exists := botMap[line.Bid]; exists {
 			bot.Lines = append(bot.Lines, line)
 		}
 	}
@@ -77,7 +77,7 @@ func (dbh *DBHandler) GetMultipleBotsByIdentifiers(identifiers []string) ([]*mod
 	}
 	defer dbh.DB.Close()
 
-	query := "SELECT * FROM bots WHERE botid IN (?" + strings.Repeat(",?", len(identifiers)-1) + ")"
+	query := "SELECT * FROM bots WHERE id IN (?" + strings.Repeat(",?", len(identifiers)-1) + ")"
 
 	// Execute the query with the provided identifiers
 	rows, err := dbh.DB.Query(query, utils.InterfaceSlice(identifiers))
@@ -94,15 +94,14 @@ func (dbh *DBHandler) GetMultipleBotsByIdentifiers(identifiers []string) ([]*mod
 
 		bot := &models.Bot{}
 
-		if err := rows.Scan(&bot.ID, &bot.Guild, &bot.Name, &bot.Author,
-			&bot.Banner, &bot.CreatedAt, &bot.Author, &bot.Status, &bot.IsSinger); err != nil {
+		if err := rows.Scan(bot.PtrFieldsDB()...); err != nil {
 			log.Printf("There's been an error scanning a member from the database." + err.Error())
 			return nil, err
 		}
 
 		bot.Lines = []models.Line{}
 		bots = append(bots, bot)
-		botMap[bot.ID] = bot
+		botMap[bot.Id] = bot
 	}
 
 	lrows, err := dbh.DB.Query("SELECT * FROM lines")
@@ -115,12 +114,12 @@ func (dbh *DBHandler) GetMultipleBotsByIdentifiers(identifiers []string) ([]*mod
 	for lrows.Next() {
 		var line models.Line
 
-		if err := lrows.Scan(&line.ID, &line.BID, &line.Phrase, &line.Author, &line.To, &line.LineType, &line.CreatedAt); err != nil {
+		if err := lrows.Scan(line.PtrFieldsDB()...); err != nil {
 			log.Print("There's been an error scanning line. " + err.Error())
 			return bots, err
 		}
 
-		if bot, exists := botMap[line.BID]; exists {
+		if bot, exists := botMap[line.Bid]; exists {
 			bot.Lines = append(bot.Lines, line)
 		}
 	}
@@ -146,7 +145,7 @@ func (dbh *DBHandler) InsertMultipleBots(bots []models.Bot) (string, error) {
 	}
 
 	// Prepare the SQL statement for inserting members
-	stmt, err := tx.Prepare(`INSERT INTO bots (botguild, botname, avatarurl, bannerurl, createdat, author, botstatus, isSinger) 
+	stmt, err := tx.Prepare(`INSERT INTO bots (guild, username, avatarurl, bannerurl, createdat, author, status, issinger) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		log.Printf("Failed to prepare statement: %v", err)
@@ -166,8 +165,7 @@ func (dbh *DBHandler) InsertMultipleBots(bots []models.Bot) (string, error) {
 		}
 
 		// Execute the insert statement
-		res, err := stmt.Exec(b.Guild, b.Name, b.Avatar, b.Banner, b.CreatedAt, b.Author,
-			b.Status, b.IsSinger)
+		res, err := stmt.Exec(b.Guild, b.Username, b.Avatarurl, b.Bannerurl, b.Createdat, b.Author, b.Status, b.Issinger)
 		if err != nil {
 			log.Printf("Failed to insert bot %v: %v", b, err)
 			log.Printf("(Skipping)")
@@ -189,7 +187,7 @@ func (dbh *DBHandler) InsertMultipleBots(bots []models.Bot) (string, error) {
 					(bid, phrase, author, toid, ltype, createdat)
 				VALUES 
 					(?, ?, ?, ?, ?, ?)`,
-					lastId, line.Phrase, line.Author, line.To, line.LineType, line.CreatedAt)
+					lastId, line.Phrase, line.Author, line.Toid, line.Ltype, line.Createdat)
 				if err != nil {
 					log.Printf("Error inserting line %v into the database, %v", line, err.Error())
 				}
@@ -254,27 +252,25 @@ func (dbh *DBHandler) GetBotByIdentifier(identifier string) (*models.Bot, error)
 	}
 	defer dbh.DB.Close()
 
-	row := dbh.DB.QueryRow("SELECT * FROM bots WHERE botid = ?", identifier)
+	row := dbh.DB.QueryRow("SELECT * FROM bots WHERE id = ?", identifier)
 
 	bot := models.Bot{}
 	bot.Lines = []models.Line{}
 
-	if err := row.Scan(&bot.ID, &bot.Guild, &bot.Name, &bot.Avatar,
-		&bot.Banner, &bot.CreatedAt, &bot.Author, &bot.Status, &bot.IsSinger,
-	); err != nil {
+	if err := row.Scan(bot.PtrFieldsDB()...); err != nil {
 		log.Printf("There's been an error scanning the Line from rows. %v", err.Error())
 		return nil, err
 	}
 
-	lrows, err := dbh.DB.Query("SELECT * FROM lines WHERE bid = ?", bot.ID)
+	lrows, err := dbh.DB.Query("SELECT * FROM lines WHERE bid = ?", bot.Id)
 	if err == nil {
 		defer lrows.Close()
 
 		for lrows.Next() {
 			var line models.Line
 
-			if err := lrows.Scan(&line.ID, &line.BID, &line.Phrase, &line.Author, &line.To, &line.LineType, &line.CreatedAt); err != nil {
-				log.Printf("There's been an error scanning the line for botid %v %v", bot.ID, err.Error())
+			if err := lrows.Scan(line.PtrFieldsDB()...); err != nil {
+				log.Printf("There's been an error scanning the line for botid %v %v", bot.Id, err.Error())
 				break
 			}
 
@@ -299,9 +295,8 @@ func (dbh *DBHandler) InsertBot(b *models.Bot) (string, error) {
 	}
 	defer dbh.DB.Close()
 
-	res, err := dbh.DB.Exec(`INSERT INTO bots (botguild, botname, avatarurl, bannerurl, createdat, author, botstatus, isSinger) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		b.Guild, b.Name, b.Avatar, b.Banner, b.CreatedAt, b.Author, b.Status, b.IsSinger)
+	res, err := dbh.DB.Exec(`INSERT INTO bots (guild, username, avatarurl, bannerurl, createdat, author, status, issinger) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, b.Guild, b.Username, b.Avatarurl, b.Bannerurl, b.Createdat, b.Author, b.Status, b.Issinger)
 	if err != nil {
 		log.Printf("There's been an error inserting the bot %v in the DB."+err.Error(), b)
 		return "error inserting bot", err
@@ -320,8 +315,7 @@ func (dbh *DBHandler) InsertBot(b *models.Bot) (string, error) {
 				INSERT INTO lines 
 					(bid, phrase, author, toid, ltype, createdat)
 				VALUES 
-					(?, ?, ?, ?, ?, ?)`,
-				lastId, line.Phrase, line.Author, line.To, line.LineType, line.CreatedAt)
+					(?, ?, ?, ?, ?, ?)`, line.Bid, line.Phrase, line.Author, line.Toid, line.Ltype, line.Createdat)
 			if err != nil {
 				log.Printf("Error inserting line %v into the database", line)
 			}
@@ -344,8 +338,15 @@ func (dbh *DBHandler) UpdateBotByIdentifier(b *models.Bot, identifier string) (s
 
 	defer dbh.DB.Close()
 
-	res, err := dbh.DB.Exec(`UPDATE bots SET botguild = ?, botname = ?, avatarurl = ?, bannerurl = ?, createdat = ?, author = ?, botstatus = ?, isSinger = ? WHERE botid = ?`,
-		b.Guild, b.Name, b.Avatar, b.Banner, b.CreatedAt, b.Author, b.Status, b.IsSinger, identifier)
+	res, err := dbh.DB.Exec(`UPDATE bots SET guild = ?, username = ?, avatarurl = ?, bannerurl = ?, createdat = ?, author = ?, status = ?, issinger = ? WHERE id = ?`, b.Guild,
+		b.Username,
+		b.Avatarurl,
+		b.Bannerurl,
+		b.Createdat,
+		b.Author,
+		b.Status,
+		b.Issinger,
+		identifier)
 	if err != nil {
 		log.Printf("There's been an error updating the bot %v in the DB."+err.Error(), b)
 		return "error inserting bot", err
@@ -369,7 +370,7 @@ func (dbh *DBHandler) DeleteBotByIdentifier(identifier string) (string, error) {
 
 	defer dbh.DB.Close()
 
-	res, err := dbh.DB.Exec(`DELETE FROM bots WHERE botid = ?`, identifier)
+	res, err := dbh.DB.Exec(`DELETE FROM bots WHERE id = ?`, identifier)
 	if err != nil {
 		log.Printf("There's been an error deleting the bot with id %v in the DB."+err.Error(), identifier)
 		return "error deleting bot", err
@@ -398,8 +399,8 @@ func (dbh *DBHandler) DeleteMultipleBotsByIdentifiers(identifiers []string) (str
 		return "Error starting transaction", err
 	}
 
-	queryID := `DELETE FROM bots WHERE botid = ?`
-	queryUsername := `DELETE FROM bots WHERE botname = ?`
+	queryID := `DELETE FROM bots WHERE id = ?`
+	queryUsername := `DELETE FROM bots WHERE username = ?`
 
 	totalDeleted := 0
 	for _, identifier := range identifiers {
@@ -490,7 +491,7 @@ func (dbh *DBHandler) GetBotLines() ([]models.Line, error) {
 	for rows.Next() {
 		var line models.Line
 
-		if err := rows.Scan(&line.ID, &line.BID, &line.Phrase, &line.Author, &line.To, &line.LineType, &line.CreatedAt); err != nil {
+		if err := rows.Scan(line.PtrFieldsDB()...); err != nil {
 			log.Printf("There's been an error scanning the Line from rows. %v", err.Error())
 			return nil, err
 		}
@@ -509,7 +510,7 @@ func (dbh *DBHandler) GetMultipleLinesByIdentifiers(identifiers []string) ([]mod
 	}
 	defer dbh.DB.Close()
 
-	query := "SELECT * FROM lines WHERE lineid IN (?" + strings.Repeat(",?", len(identifiers)-1) + ")"
+	query := "SELECT * FROM lines WHERE id IN (?" + strings.Repeat(",?", len(identifiers)-1) + ")"
 
 	// Execute the query with the provided identifiers
 	rows, err := dbh.DB.Query(query, utils.InterfaceSlice(identifiers))
@@ -524,7 +525,7 @@ func (dbh *DBHandler) GetMultipleLinesByIdentifiers(identifiers []string) ([]mod
 	for rows.Next() {
 		var line models.Line
 
-		if err := rows.Scan(&line.ID, &line.BID, &line.Phrase, &line.Author, &line.To, &line.LineType, &line.CreatedAt); err != nil {
+		if err := rows.Scan(line.PtrFieldsDB()...); err != nil {
 			log.Printf("There's been an error scanning the Line from rows. %v", err.Error())
 			return nil, err
 		}
@@ -574,7 +575,7 @@ func (dbh *DBHandler) InsertMultipleLines(lines []models.Line) (string, error) {
 		}
 
 		// Execute the insert statement
-		_, err := stmt.Exec(l.BID, l.Phrase, l.Author, l.To, l.LineType)
+		_, err := stmt.Exec(l.Bid, l.Phrase, l.Author, l.Toid, l.Ltype)
 		if err != nil {
 			log.Printf("Failed to insert line %v: %v", l, err)
 			log.Printf("(Skipping)")
@@ -604,11 +605,11 @@ func (dbh *DBHandler) GetBotLineByIdentifier(identifier string) (*models.Line, e
 	}
 	defer dbh.DB.Close()
 
-	row := dbh.DB.QueryRow("SELECT * FROM lines WHERE lineid = ?", identifier)
+	row := dbh.DB.QueryRow("SELECT * FROM lines WHERE id = ?", identifier)
 
 	line := models.Line{}
 
-	if err := row.Scan(&line.ID, &line.BID, &line.Phrase, &line.Author, &line.To, &line.LineType, &line.CreatedAt); err != nil {
+	if err := row.Scan(line.PtrFieldsDB()...); err != nil {
 		log.Printf("There's been an error scanning the Line from rows. %v", err.Error())
 		return nil, err
 	}
@@ -632,7 +633,7 @@ func (dbh *DBHandler) InsertLine(l *models.Line) (string, error) {
 
 	res, err := dbh.DB.Exec(`INSERT INTO lines (bid, phrase, author, toid, ltype)
 		VALUES (?, ?, ?, ?, ?)`,
-		l.BID, l.Phrase, l.Author, l.To, l.LineType)
+		l.Bid, l.Phrase, l.Author, l.Toid, l.Ltype)
 	if err != nil {
 		log.Printf("There's been an error inserting the line %v in the DB."+err.Error(), l)
 		return "error inserting line", err
@@ -656,8 +657,8 @@ func (dbh *DBHandler) UpdateLineByIdentifier(l models.Line, identifier string) (
 
 	defer dbh.DB.Close()
 
-	res, err := dbh.DB.Exec(`UPDATE lines SET lineid = ?, bid = ?, phrase = ?, author = ?, toid = ?, ltype = ?, createdat = ? WHERE id = ?`,
-		l.ID, l.BID, l.Phrase, l.Author, l.To, l.LineType, l.CreatedAt, identifier)
+	res, err := dbh.DB.Exec(`UPDATE lines SET id = ?, bid = ?, phrase = ?, author = ?, toid = ?, ltype = ?, createdat = ? WHERE id = ?`,
+		l.Id, l.Bid, l.Phrase, l.Author, l.Toid, l.Ltype, l.Createdat, identifier)
 	if err != nil {
 		log.Printf("There's been an error updating the line %v in the DB."+err.Error(), l)
 		return "error inserting line", err
@@ -681,7 +682,7 @@ func (dbh *DBHandler) DeleteLineByIdentifier(identifier string) (string, error) 
 
 	defer dbh.DB.Close()
 
-	res, err := dbh.DB.Exec(`DELETE FROM lines WHERE lineid = ?`, identifier)
+	res, err := dbh.DB.Exec(`DELETE FROM lines WHERE id = ?`, identifier)
 	if err != nil {
 		log.Printf("There's been an error deleting the line with id %v in the DB."+err.Error(), identifier)
 		return "error deleting line", err
@@ -710,7 +711,7 @@ func (dbh *DBHandler) DeleteMultipleLinesByIdentifiers(identifiers []string) (st
 		return "Error starting transaction", err
 	}
 
-	queryID := `DELETE FROM lines WHERE lineid = ?`
+	queryID := `DELETE FROM lines WHERE id = ?`
 
 	totalDeleted := 0
 	for _, identifier := range identifiers {

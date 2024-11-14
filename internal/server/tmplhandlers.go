@@ -52,7 +52,7 @@ func HofHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Sort members on msg_count
 	sort.Slice(members, func(i, j int) bool {
-		return members[i].MsgCount > members[j].MsgCount
+		return members[i].Msgcount > members[j].Msgcount
 	})
 
 	// Create a slice of maps with index and member data
