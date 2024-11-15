@@ -1,8 +1,10 @@
 <div id="hof-display"> 
-    <script src="assets/js/hof.js"></script>
-   
+    
     <canvas id="matrixCanvas"></canvas>
-    <script src="assets/js/matrix_effect.js"></script>
+    <script>
+        matrixEffect = createMatrixEffect();
+        document.getElementById('matrix-switch').addEventListener('click', matrixEffect.toggle);
+    </script>
 
     <div class="hof-content">
         <div id="hof-header">

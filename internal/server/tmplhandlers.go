@@ -34,7 +34,7 @@ func BotsDHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmplPath := filepath.Join("cmd", "api", "web", "templates", "bots.html")
+	tmplPath := filepath.Join("web", "templates", "bots.html")
 	tmpl, err := template.ParseFiles(tmplPath)
 	if err != nil {
 		http.Error(w, "Error loading template", http.StatusInternalServerError)
@@ -76,7 +76,7 @@ func HofHandler(w http.ResponseWriter, r *http.Request) {
 		v.Usercolor += opacity
 	}
 
-	tmplPath := filepath.Join("cmd", "api", "web", "templates", "hof.html")
+	tmplPath := filepath.Join("web", "templates", "hof.html")
 	tmpl, err := template.New("hof.html").Funcs(funcMap).ParseFiles(tmplPath)
 	if err != nil {
 		log.Print("Error loading template. " + err.Error())
@@ -93,7 +93,7 @@ func HofHandler(w http.ResponseWriter, r *http.Request) {
 
 // Serve clients.html
 func ClientsHandler(w http.ResponseWriter, r *http.Request) {
-	tmplPath := filepath.Join("cmd", "api", "web", "templates", "clients.html")
+	tmplPath := filepath.Join("web", "templates", "clients.html")
 	tmpl, err := template.ParseFiles(tmplPath)
 	if err != nil {
 		http.Error(w, "Error loading template", http.StatusInternalServerError)

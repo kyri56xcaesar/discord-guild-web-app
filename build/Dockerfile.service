@@ -1,20 +1,18 @@
-FROM golang:latest
-
+FROM golang:latest AS builder
 WORKDIR /app
-
 COPY go.mod go.sum ./
 RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/api/main.go
 
-COPY *.go ./
-COPY .env ./
 
-ENV PORT=${HTTP_PORT}
+# final stage
+FROM scratch
+WORKDIR /app
+COPY server.env .
+COPY ./internal/database/sqlscripts ./internal/database/sqlscripts
+COPY ./web ./web
+COPY --from=builder /app/server .
+EXPOSE 6971
+CMD ["./server"]
 
-# Build the Go application
-RUN go build -o app ./app.go
-
-# Expose the specified port (replace ${HTTP_PORT} with a default port if needed)
-EXPOSE ${HTTP_PORT}
-
-# Command to run the Go application
-CMD ["./app"]

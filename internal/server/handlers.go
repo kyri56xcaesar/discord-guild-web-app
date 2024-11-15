@@ -19,7 +19,6 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
 	// RespondWithJSON(w, http.StatusOK, "Up")
-	templatePath := "/cmd/api/web/templates/index.html"
 	RespondWithTemplate(w, http.StatusOK, templatePath, nil)
 }
 

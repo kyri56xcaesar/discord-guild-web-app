@@ -1,4 +1,14 @@
-setTimeout(2000);
+function toggleTitleAnimation() {
+
+    // console.log('Tittle effect toggle');
+    const title = document.getElementById('hof-title');
+
+    if (title.style.animationPlayState === 'paused') {
+        title.style.animationPlayState = 'running'; // Resume the animation
+    } else {
+        title.style.animationPlayState = 'paused';  // Pause the animation (freeze)
+    }
+}
 
 
 function createMatrixEffect() {
@@ -94,11 +104,26 @@ function createMatrixEffect() {
     };
 }
 
-// Create and initialize the matrix effect
-matrixEffect = createMatrixEffect();
 
-// Now you can control the matrix effect via the returned object
-// Example usage for toggling the matrix effect
-document.getElementById('matrix-switch').addEventListener('click', matrixEffect.toggle);
+function setHofTitle(guild_name, month, year) {
 
+    const matrix_switch = document.getElementById('matrix-switch');
+    const title_effect_switch = document.getElementById('title-effect-switch');
+
+    matrix_switch.setAttribute('checked', 'checked');
+    title_effect_switch.setAttribute('checked', 'checked');
+
+    if (!month || !year) {
+        let currentDate = new Date();
+        month = currentDate.getMonth() + 1;
+        year = currentDate.getFullYear();
+    }
+
+    let hofTitle = document.getElementById('hof-title');
+    let currentDate = new Date();
+
+    currentDate.setMonth(currentDate.getMonth() - 1);
+
+    hofTitle.innerText = `${guild_name} HALL OF FAME - ${month}/${year}`;
+}
 

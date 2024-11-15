@@ -36,7 +36,34 @@ function toggleNav() {
     }
 }
 
+// Utility functions
+function formatDate(dateString) {
+    const date = new Date(dateString);
 
+    return date.toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'})
+    
+}
+
+function hexToRGBA(hex_string, alpha = 1) {
+
+    isHexColor = hex => typeof hex === 'string' && hex.length === 6 && !isNaN(Number('0x' + hex))
+
+    if (!isHexColor(hex_string)) {
+        return hex_string;
+    }
+
+    hex_string = hex_string.replace(/^#/, '');
+
+    if (hex_string.length === 3) {
+        hex = hex.split('').map(char => char + char).join('');
+    }
+
+    const r = parseInt(hex_string.substring(0, 2), 16);
+    const g = parseInt(hex_string.substring(2, 4), 16);
+    const b = parseInt(hex_string.substring(4, 6), 16);
+
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 
 

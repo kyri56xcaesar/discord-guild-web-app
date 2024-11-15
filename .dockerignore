@@ -1,0 +1,6 @@
+build/
+secrets
+*.log
+*.tmp
+*.vscode
+*.git

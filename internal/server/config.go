@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"reflect"
 	"strings"
@@ -22,9 +23,9 @@ type EnvConfig struct {
 	AllowedMethods []string
 }
 
-func loadConfig(path string) (*EnvConfig, error) {
+func loadConfig(path string) *EnvConfig {
 	if err := godotenv.Load(path); err != nil {
-		return nil, err
+		log.Printf("Could not load %s config file. Using default variables", path)
 	}
 
 	split := strings.Split(path, "/")
@@ -42,7 +43,7 @@ func loadConfig(path string) (*EnvConfig, error) {
 		AllowedMethods: getEnvs("ALLOWED_METHODS", nil),
 	}
 
-	return config, nil
+	return config
 }
 
 func getEnv(key, fallback string) string {

@@ -33,7 +33,11 @@ func (serror *ServerError) Error() string {
 }
 
 // there should be a limit to the amount of servers possible
-const MAX_SERVERS int = 100
+const (
+	MAX_SERVERS  int    = 100
+	templatePath string = "/web/templates/index.html"
+	assetsPath   string = "./web/assets"
+)
 
 // Server pool
 var (
@@ -58,13 +62,8 @@ func NewServer(conf string) (*Server, error) {
 
 	server.serverID = currentIndex
 	server.Router = mux.NewRouter()
+	server.Config = loadConfig(conf)
 
-	var err error
-	server.Config, err = loadConfig(conf)
-	if err != nil {
-		log.Fatalf("Error loading config file. Should exit. %v", err)
-		return nil, err
-	}
 	log.Printf("ServerID: %d\n[CFG]...Loading configurations...\n%v\n", currentIndex, server.Config.toString())
 
 	server.routes()
@@ -94,7 +93,7 @@ func (s *Server) routes() {
 	s.Router.HandleFunc("/dbots", BotsDHandler)
 	s.Router.HandleFunc("/hof", HofHandler)
 
-	s.Router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("./cmd/api/web/assets"))))
+	s.Router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir(assetsPath))))
 	// Admin (Must Verify)
 	s.Router.HandleFunc("/admin/healthz", HealthCheck)
 
@@ -149,10 +148,13 @@ func (s *Server) Start() {
 		log.Fatalf("Error getting current working directory: %v", err)
 	}
 	scriptPath := fmt.Sprintf("%s%s", curpath, database.InitSQLScriptPath)
+	// log.Printf("Current directory: %s", curpath)
+	// log.Printf("Script path: %s", scriptPath)
 
 	// Init database
 	if err = database.InitDB(s.Config.DBfile, scriptPath); err != nil {
-		log.Fatalf("[INIT DB]Error during db initialization: %v", err)
+		log.Printf("[INIT DB]Error during db initialization: %v", err)
+		// Should handle case that it is fatal...
 	}
 	// Set database reference
 	DBName = s.Config.DBfile
@@ -181,7 +183,6 @@ func (s *Server) Start() {
 	// Set up a buffered channel for signals
 	sig := make(chan os.Signal, 10)
 	signal.Notify(sig, os.Interrupt, syscall.SIGUSR1, syscall.SIGUSR2)
-
 	// Mutex and timestamp for throttling server restarts
 	var restartMutex sync.Mutex
 	var lastRestart time.Time
@@ -245,10 +246,8 @@ func (s *Server) restartServer(srv *http.Server) {
 	}
 	log.Println("Server shut down for restart")
 
-	config, err := loadConfig(s.Config.ConfigPath)
-	if err != nil {
-		log.Fatalf("Error loading configuration: %v", err)
-	}
+	config := loadConfig(s.Config.ConfigPath)
+
 	log.Printf("Config file: %+v", config)
 
 	time.Sleep(5 * time.Second)
