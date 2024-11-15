@@ -109,6 +109,17 @@ func (msg *Message) PtrFieldsDB() []any {
 	return []any{&msg.Content, &msg.Channel, &msg.Createdat, &msg.Messageid, &msg.Userid}
 }
 
+func (role *Role) VerifyRole() error {
+	if !utils.IsValidUTF8String(role.Rolename) {
+		return &utils.FieldError{Field: "Role_name", Message: "must contain letters, numbers or symbols"}
+	}
+
+	// 	if !isValidColor(role.Color) {
+	// 		return &FieldError{Field: "Color", Message: "must contain color representation"}
+	// 	}
+	return nil
+}
+
 func (msg *Message) VerifyMessage() error {
 	if !utils.IsValidUTF8String(msg.Content) {
 		return &utils.FieldError{Field: "Content", Message: "must contain letters, numbers or symbols"}

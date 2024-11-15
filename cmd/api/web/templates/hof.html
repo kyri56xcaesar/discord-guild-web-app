@@ -34,35 +34,36 @@
                 </div>
             </div>
             <h2 id="hof-title" class="fancy-title"></h2>
+            <script> setHofTitle('$DADS', 10, 2024) </script>
             <div id="hof-header-right">
                 <div id="month-fetch-controller">
 
                 </div>
             </div>
-            <!-- month controller -->
+
         </div>
         <hr>
         <ol id="hof-list">
-            {{ range . }}
-            <li class="hof-entry" style="background-color: {{ .Member.User_color }};">
+            {{ range $index, $member := . }}
+            <li class="hof-entry-{{ inc $index }}" style="background-color: {{ $member.User_color }};">
                 <div class="hof-entry-left">
-                    <h1>{{ .Index }}.</h1>
-                    <img class="border-color-{{ .Member.Status }}" src="{{ .Member.Avatar }}" alt="avatar" />
-                    <h3>{{ .Member.Username }} <br> ({{ .Member.Nick }})</h3>
+                    <h1>{{ inc $index }}.</h1>
+                    <img class="border-color-{{  $member.Status }}" src="{{  $member.Avatar }}" alt="avatar" />
+                    <h3>{{  $member.Username }} <br> ({{  $member.Nick }})</h3>
                 </div>
 
                 <div style="border-left:1px solid #000;height:250px"></div>
 
                 <div class="hof-entry-right">
-                    <p><strong>Message Count:</strong> <span class="msg-count">{{ .Member.MsgCount }}</span></p>
+                    <p><strong>Message Count:</strong> <span class="msg-count">{{ $member.MsgCount }}</span></p>
                     <p><strong>Roles:</strong> 
-                        {{ range .Member.Roles }}
+                        {{ range  $member.Roles }}
                             <span style="color: {{ .Color }};">{{ .Role_name }}</span>
                         {{ end }}
                     </p>
-                    <p><strong>Joined At:</strong> {{ .Member.JoinedAt }}</p>
-                    <p><strong>Status:</strong> {{ .Member.Status }} 
-                        <span class="status-light {{ .Member.Status }}"></span>
+                    <p><strong>Joined At:</strong> {{ $member.JoinedAt }}</p>
+                    <p><strong>Status:</strong> {{ $member.Status }} 
+                        <span class="status-light {{ $member.Status }}"></span>
                     </p>
                 </div>
             </li>

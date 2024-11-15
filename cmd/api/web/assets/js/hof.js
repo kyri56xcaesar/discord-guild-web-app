@@ -1,6 +1,5 @@
 
-setHofTitle(guild_name);
-function setHofTitle(guild_name) {
+function setHofTitle(guild_name, month, year) {
 
     const matrix_switch = document.getElementById('matrix-switch');
     const title_effect_switch = document.getElementById('title-effect-switch');
@@ -8,6 +7,9 @@ function setHofTitle(guild_name) {
     matrix_switch.setAttribute('checked', 'checked');
     title_effect_switch.setAttribute('checked', 'checked');
 
+    if (!month || !year) {
+        let currentDate = new Date();
+    }
 
     let hofTitle = document.getElementById('hof-title');
     let currentDate = new Date();

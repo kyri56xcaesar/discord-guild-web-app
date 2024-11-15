@@ -6,12 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"os/signal"
-	"strconv"
-	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"kyri56xcaesar/discord_bots_app/internal/database"
@@ -180,11 +176,7 @@ func (s *Server) Start() {
 
 	// Set up a buffered channel for signals
 	sig := make(chan os.Signal, 10)
-	signal.Notify(sig, os.Interrupt, syscall.SIGUSR1, syscall.SIGUSR2)
-
-	// Mutex and timestamp for throttling server restarts
-	var restartMutex sync.Mutex
-	var lastRestart time.Time
+	signal.Notify(sig, os.Interrupt)
 
 	for {
 		select {
@@ -203,118 +195,8 @@ func (s *Server) Start() {
 				log.Println("Server exited properly")
 				return
 
-			case syscall.SIGUSR1:
-				go func() {
-					restartMutex.Lock()
-					defer restartMutex.Unlock()
-
-					// Check for a new config path from an environment variable
-					newConfigPath := os.Getenv("NEW_CONFIG_PATH")
-					if newConfigPath != "" {
-						log.Printf("Using new config path: %s", newConfigPath)
-						s.Config.ConfigPath = newConfigPath // Update the path if provided
-					}
-
-					// Throttle restarts to prevent excessive operations
-					if time.Since(lastRestart) > 5*time.Second {
-						s.restartServer(srv)
-						lastRestart = time.Now()
-					} else {
-						log.Println("Server restart throttled")
-					}
-				}()
-
-			case syscall.SIGUSR2:
-				go func() {
-					log.Println("Entering script execution prompt...")
-					s.runSQLScript(s.Config.DBfile)
-				}()
-			}
-		}
-	}
-}
-
-func (s *Server) restartServer(srv *http.Server) {
-	// Shutdown the current server
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Printf("Error shutting down server for restart: %v", err)
-		return
-	}
-	log.Println("Server shut down for restart")
-
-	config, err := loadConfig(s.Config.ConfigPath)
-	if err != nil {
-		log.Fatalf("Error loading configuration: %v", err)
-	}
-	log.Printf("Config file: %+v", config)
-
-	time.Sleep(5 * time.Second)
-	// Restart the server with the same configuration
-	go func() {
-		newSrv := &http.Server{
-			Handler: s.Router,
-			Addr:    ":" + config.HTTPPort,
-		}
-		log.Println("Restarting server...")
-		if err := newSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server failed to restart: %v", err)
-		}
-	}()
-}
-
-// runSQLInitScript allows dynamically running an SQL script
-func (s *Server) runSQLScript(dbpath string) {
-	// Example: Dynamically get the SQL script path from the user
-
-	sqlDir := "/internal/database/sqlscripts/"
-	wd, _ := os.Getwd()
-
-	sqlDir = fmt.Sprintf("%s%s", wd, sqlDir)
-
-	scriptPath := os.Getenv("SQL_SCRIPT_PATH")
-	if scriptPath != "" {
-		log.Printf("Using the script path: %s", scriptPath)
-	} else {
-		log.Printf("SQL Env Path empty... prompting...")
-		fmt.Printf("Current dir: %v\n", wd)
-		out, err := exec.Command("ls", "--color=auto", sqlDir).Output()
-		if err != nil {
-			log.Print(err)
-		}
-		fmt.Printf("Avaliable scripts:\n%s\n", string(out))
-
-		contents := strings.Split(string(out), "\n")
-		for index, content := range contents {
-			if strings.HasSuffix(content, ".sql") {
-				fmt.Printf("%d.  %s\n", index+1, content)
-			}
-		}
-		fmt.Print("\n\nEnter the SQL script[name/index]: ")
-		fmt.Scanln(&scriptPath)
-		index, err := strconv.Atoi(scriptPath)
-		if err == nil {
-			if index >= 1 && index <= len(contents) {
-				scriptPath = contents[index-1]
 			}
 		}
 
-		log.Printf("Script chosen: %s", scriptPath)
-
 	}
-
-	absPath := fmt.Sprintf("%s%s", sqlDir, scriptPath)
-	// Check if the file exists before proceeding
-	if _, err := os.Stat(absPath); os.IsNotExist(err) {
-		log.Printf("SQL script not found at path: %s", absPath)
-		return
-	}
-
-	if err := database.InitDB(dbpath, absPath); err != nil {
-		log.Printf("Error running SQL init script: %v", err)
-		return
-	}
-	log.Println("SQL init script executed successfully")
 }

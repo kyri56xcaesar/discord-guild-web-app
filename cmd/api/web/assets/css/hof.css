@@ -60,25 +60,24 @@
     
 }
 
-#hof-entry-1, #hof-entry-2, #hof-entry-3 {
+.hof-entry-1, .hof-entry-2, .hof-entry-3 {
   border-radius: 15px;
 
 }
 
 
-#hof-entry-1 {
+.hof-entry-1 {
   
   border: 5px solid gold;
   
 }
 
-#hof-entry-2 {
+.hof-entry-2 {
   border: 5px solid silver;
-
 
 }
 
-#hof-entry-3 {
+.hof-entry-3 {
   border: 5px solid #CD7F32;
 
 }
@@ -138,6 +137,10 @@
     -o-user-select: none;
     user-select: none;
 
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .border-color-online {

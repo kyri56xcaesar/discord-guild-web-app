@@ -23,6 +23,14 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 	RespondWithTemplate(w, http.StatusOK, templatePath, nil)
 }
 
+// GUILD HANDLERS
+func GuildHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
+
+	RespondWithJSON(w, http.StatusFound, "{'guilds'}")
+}
+
+// MEMBERS HANDLERS
 func MembersHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
@@ -376,10 +384,30 @@ func DataHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func GuildHandler(w http.ResponseWriter, r *http.Request) {
+// BOTS HANDLERS
+func RootBotHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
+	dbh := database.GetConnector(DBName)
 
-	RespondWithJSON(w, http.StatusFound, "{'guilds'}")
+	switch r.Method {
+	case http.MethodGet:
+		log.Print("Redirecting to /guild/bots/")
+		http.Redirect(w, r, "/guild/bots", http.StatusMovedPermanently)
+	case http.MethodPost:
+		var newBot models.Bot
+		err := json.NewDecoder(r.Body).Decode(&newBot)
+		if err != nil {
+			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
+			return
+		}
+
+		_, err = dbh.InsertBot(&newBot)
+		if err != nil {
+			RespondWithError(w, http.StatusBadRequest, "Failed to insert multiple lines")
+		} else {
+			RespondWithJSON(w, http.StatusCreated, newBot)
+		}
+	}
 }
 
 func BotHandler(w http.ResponseWriter, r *http.Request) {
@@ -497,6 +525,7 @@ func BotsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// LINES HANDLERS
 func LinesHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
