@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
 	"text/template"
 )
 
@@ -15,7 +14,6 @@ type errResponse struct {
 }
 
 func RespondWithError(w http.ResponseWriter, code int, msg string) {
-
 	if code > 499 {
 		log.Println("Responding with 5XX error: ", msg)
 	}
@@ -28,11 +26,9 @@ func RespondWithError(w http.ResponseWriter, code int, msg string) {
 		Error: msg,
 		Code:  code,
 	})
-
 }
 
 func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
-
 	data, err := json.Marshal(payload)
 	if err != nil {
 		log.Printf("Failed to marshal JSON payload: %+v", payload)
@@ -43,6 +39,7 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(data)
+	w.Write([]byte("\n"))
 }
 
 func RespondWithHTML(w http.ResponseWriter, code int, html string) {
@@ -82,9 +79,4 @@ func RespondWithTemplate(w http.ResponseWriter, code int, templatePath string, d
 		log.Printf("Failed to execute template: %v", err)
 		http.Error(w, "Error rendering template", http.StatusInternalServerError)
 	}
-}
-
-func IsAlphanumeric(s string) bool {
-	re := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
-	return re.MatchString(s)
 }

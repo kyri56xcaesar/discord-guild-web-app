@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"time"
 
 	"kyri56xcaesar/discord_bots_app/internal/database"
@@ -17,92 +18,157 @@ import (
 
 type Server struct {
 	Router   *mux.Router
-	ConfPath string //sqlite .db filepath
+	Config   *EnvConfig // sqlite .db filepath
+	serverID int
 }
 
-func NewServer(conf string) *Server {
-	server := &Server{
-		Router:   mux.NewRouter(),
-		ConfPath: conf,
+type ServerError struct{}
+
+func (serror *ServerError) Error() string {
+	return "server error"
+}
+
+// there should be a limit to the amount of servers possible
+const MAX_SERVERS int = 100
+
+// Server pool
+var (
+	serverPool    [MAX_SERVERS]Server
+	currentIndex  int = 0
+	CurrentServer *Server
+	DBName        string
+
+	poolMutex sync.Mutex
+)
+
+func NewServer(conf string) (*Server, error) {
+	poolMutex.Lock()
+	defer poolMutex.Unlock()
+
+	if currentIndex >= MAX_SERVERS {
+		log.Println("Server pool limit reached. Cannot create more servers. UPDATE MAX SERVERS")
+		return nil, &ServerError{}
 	}
+
+	server := serverPool[currentIndex]
+
+	server.serverID = currentIndex
+	server.Router = mux.NewRouter()
+
+	var err error
+	server.Config, err = loadConfig(conf)
+	if err != nil {
+		log.Fatalf("Error loading config file. Should exit. %v", err)
+		return nil, err
+	}
+	log.Printf("ServerID: %d\n[CFG]...Loading configurations...\n%v\n", currentIndex, server.Config.toString())
 
 	server.routes()
 
-	return server
+	currentIndex += 1
+
+	return &server, nil
 }
 
-func (s *Server) routes() {
+// ToDo
+// CRUD: Check
+// Add Pagination: ToDo
+// Bulk Operations: ToDo
+// Search(Filteting): ToDo
+// Metrics/Stats: ToDo
+// Exports/Imports: ToDo
+// Utilities: Check
+// Documentation: ToDo
+//
 
+func (s *Server) routes() {
 	s.Router.StrictSlash(true)
 
 	// Root handler for health check
+	// Templates
 	s.Router.HandleFunc("/", RootHandler)
-	s.Router.HandleFunc("/healthz", HealthCheck)
 	s.Router.HandleFunc("/dbots", BotsDHandler)
 	s.Router.HandleFunc("/hof", HofHandler)
 
 	s.Router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("./cmd/api/web/assets"))))
+	// Admin (Must Verify)
+	s.Router.HandleFunc("/admin/healthz", HealthCheck)
+
 	// Subrouter for /guild
 	guildRouter := s.Router.PathPrefix("/guild").Subrouter()
+
+	// CRUD
 	guildRouter.HandleFunc("/", GuildHandler).Methods("GET", "POST")
 	guildRouter.HandleFunc("/members", MembersHandler).Methods("GET", "POST")
 	guildRouter.HandleFunc("/bots", BotsHandler).Methods("GET", "POST")
-	guildRouter.HandleFunc("/lines", RootLineHandler).Methods("GET", "POST")
-	guildRouter.HandleFunc("/roles", RolesHandler).Methods("GET", "POST")
+	guildRouter.HandleFunc("/lines", LinesHandler).Methods("GET", "POST")
 
-	membersRouter := guildRouter.PathPrefix("/member").Subrouter()
-	membersRouter.HandleFunc("/", RootMemberHandler).Methods("GET", "POST")
-	membersRouter.HandleFunc("/{identifier}/", MemberHandler).Methods("GET", "PUT", "DELETE")
+	// Specific CRUD
+	guildRouter.HandleFunc("/member/{identifier}", MemberHandler).Methods("GET", "PUT", "DELETE")
+	guildRouter.HandleFunc("/bot/{identifier:[0-9]+}", BotHandler).Methods("GET", "POST", "PUT", "DELETE")
+	guildRouter.HandleFunc("/line/{identifier:[0-9]+}", LineHandler).Methods("GET", "PUT", "DELETE")
 
-	botsRouter := guildRouter.PathPrefix("/bot").Subrouter()
-	botsRouter.HandleFunc("/", RootBotHandler).Methods("GET", "POST")
-	botsRouter.HandleFunc("/{identifier:[0-9]+}/", BotHandler).Methods("GET", "POST", "PUT", "DELETE")
+	// Filtered Search
+	guildRouter.HandleFunc("/search/members", GMultipleData).Methods("GET")
+	guildRouter.HandleFunc("/search/bots", GMultipleData).Methods("GET")
+	guildRouter.HandleFunc("/search/lines", GMultipleData).Methods("GET")
 
-	lineRouter := guildRouter.PathPrefix("/line").Subrouter()
-	lineRouter.HandleFunc("/", RootLineHandler).Methods("GET", "POST")
-	lineRouter.HandleFunc("/{identifier:[0-9]+}/", LineHandler).Methods("GET", "PUT", "DELETE")
+	// Filtered Update, Delete
+	guildRouter.HandleFunc("/delete/members", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
+	guildRouter.HandleFunc("/delete/bots", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
+	guildRouter.HandleFunc("/delete/lines", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
 
-	roleRouter := guildRouter.PathPrefix("/role").Subrouter()
-	roleRouter.HandleFunc("/", RootRoleHandler).Methods("GET", "POST")
-	roleRouter.HandleFunc("/{identifier}/", RoleHandler).Methods("GET", "PUT", "DELETE")
+	// Utility endpoints and Metrics
+	guildRouter.HandleFunc("/get/members/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
+	guildRouter.HandleFunc("/get/bots/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
+	guildRouter.HandleFunc("/get/lines/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
+
+	guildRouter.HandleFunc("/data/members", DataIndexHandler).Methods("GET")
+	guildRouter.HandleFunc("/data/bots", DataIndexHandler).Methods("GET")
+	guildRouter.HandleFunc("/data/lines", DataIndexHandler).Methods("GET")
+
+	guildRouter.HandleFunc("/metrics", MetricsHandler).Methods("GET")
+	guildRouter.HandleFunc("/metrics/members", MetricsHandler).Methods("GET")
+	guildRouter.HandleFunc("/metrics/bots", MetricsHandler).Methods("GET")
+	guildRouter.HandleFunc("/metrics/lines", MetricsHandler).Methods("GET")
 
 	s.Router.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	s.Router.MethodNotAllowedHandler = http.HandlerFunc(notAllowedHandler)
 }
 
 func (s *Server) Start() {
+	log.Print("Server starting...")
 
-	config, err := loadConfig(s.ConfPath)
-	if err != nil {
-		log.Fatalf("Error loading configuration: %v", err)
-	}
-	log.Printf("Config file: %+v", config)
-
+	// Database Setuo
 	curpath, err := os.Getwd()
 	if err != nil {
 		log.Fatalf("Error getting current working directory: %v", err)
 	}
 	scriptPath := fmt.Sprintf("%s%s", curpath, database.InitSQLScriptPath)
 
-	if err = database.InitDB(config.DBfile, scriptPath); err != nil {
-		log.Fatalf("Error during db initialization: %v", err)
+	// Init database
+	if err = database.InitDB(s.Config.DBfile, scriptPath); err != nil {
+		log.Fatalf("[INIT DB]Error during db initialization: %v", err)
 	}
+	// Set database reference
+	DBName = s.Config.DBfile
 
-	//Enable CORS for all routes
+	// Service Setup
+	// Enable CORS for all routes
 	corsOptions := handlers.CORS(
-		handlers.AllowedOrigins(config.AllowedOrigins),
-		handlers.AllowedHeaders(config.AllowedHeaders),
-		handlers.AllowedMethods(config.AllowedMethods),
+		handlers.AllowedOrigins(s.Config.AllowedOrigins),
+		handlers.AllowedHeaders(s.Config.AllowedHeaders),
+		handlers.AllowedMethods(s.Config.AllowedMethods),
 	)
 
 	srv := &http.Server{
 		Handler: corsOptions(s.Router),
-		Addr:    ":" + config.HTTPPort,
+		Addr:    ":" + s.Config.HTTPPort,
 	}
 
 	// Start server in a goroutine
 	go func() {
-		log.Println("Server listening on port " + config.HTTPPort)
+		log.Println("Server listening on port " + s.Config.HTTPPort)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed: %v", err)
 		}
