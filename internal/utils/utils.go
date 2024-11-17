@@ -4,7 +4,9 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/url"
+	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -100,6 +102,17 @@ func InterfaceSlice(slice []string) []interface{} {
 	return interfaces
 }
 
+func MergeMaps[K comparable, V any](maps []map[K]V) map[K]V {
+	merged := make(map[K]V)
+	for _, m := range maps {
+		for key, value := range m {
+			merged[key] = value
+		}
+	}
+
+	return merged
+}
+
 func KeysSliceFromMap[K comparable, V any](mymap map[K]V) []K {
 	keys := make([]K, 0, len(mymap))
 	for k := range mymap {
@@ -142,4 +155,77 @@ func IsSliceEmpty(v []string) bool {
 		}
 	}
 	return true
+}
+
+func FilterStruct(data interface{}) (interface{}, error) {
+	// Prepare the result
+	result := []string{}
+
+	// Get the reflection value
+	value := reflect.ValueOf(data)
+
+	// Ensure the input is either a struct or a slice of structs
+	switch value.Kind() {
+	case reflect.Ptr:
+		value = value.Elem() // Dereference pointer
+		if value.Kind() == reflect.Struct {
+			// Single struct
+			filtered, err := filterSingleStruct(value)
+			if err != nil {
+				return nil, err
+			}
+			return filtered, nil
+		}
+	case reflect.Struct:
+		// Single struct
+		filtered, err := filterSingleStruct(value)
+		if err != nil {
+			return nil, err
+		}
+		return filtered, nil
+	case reflect.Slice:
+		// Slice of structs
+		for i := 0; i < value.Len(); i++ {
+			elem := value.Index(i)
+			if elem.Kind() == reflect.Ptr {
+				elem = elem.Elem() // Dereference pointer
+			}
+			if elem.Kind() != reflect.Struct {
+				return nil, fmt.Errorf("slice contains non-struct element")
+			}
+			filtered, err := filterSingleStruct(elem)
+			if err != nil {
+				return nil, err
+			}
+			result = append(result, filtered...)
+		}
+		return result, nil
+	default:
+		return nil, fmt.Errorf("input must be a struct, pointer to struct, or slice of structs, got %s", value.Kind())
+	}
+
+	return nil, fmt.Errorf("unsupported input type")
+}
+
+func filterSingleStruct(value reflect.Value) ([]string, error) {
+	filtered := []string{}
+
+	for i := 0; i < value.NumField(); i++ {
+		fieldValue := value.Field(i)
+
+		// Check if the field is a string and not empty
+		if fieldValue.Kind() == reflect.String {
+			strValue := fieldValue.String()
+			if strValue != "" {
+				filtered = append(filtered, strValue)
+			}
+		} else if fieldValue.Kind() == reflect.Int {
+			intValue := fieldValue.Int()
+			if intValue != 0 {
+				filtered = append(filtered, strconv.Itoa(int(intValue)))
+			}
+		}
+	}
+
+	return filtered, nil
 }

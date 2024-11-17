@@ -337,49 +337,21 @@ func DataHandler(w http.ResponseWriter, r *http.Request) {
 	dataT := strings.SplitN(r.URL.String(), "/", 5)[3]
 
 	vars := mux.Vars(r)
-	identifier := vars["identifier"]
+	cols := vars["identifier"]
 
-	if identifier == "" {
-		log.Print("No identifier")
-		RespondWithError(w, http.StatusBadRequest, "Must provide an Identifier")
-		return
-	}
+	data, err := dbh.Select(dataT, strings.Split(cols, ","), nil, -1, "", "")
+	if err != nil {
+		log.Printf("Error selecting data. %v", err)
+		RespondWithError(w, http.StatusBadRequest, "Error selecting data")
+	} else {
+		data, err := utils.FilterStruct(data)
 
-	switch dataT {
-	case database.TypeMember:
-		data, err := dbh.GetMemberIdentifiers(identifier)
 		if err != nil {
-			log.Printf("Failed to get member data by identifier %v", identifier)
-			RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve data")
-			return
+			log.Printf("Error filtering data. %v", err)
+			RespondWithError(w, http.StatusInternalServerError, "Error filtering data")
+		} else {
+			RespondWithJSON(w, http.StatusOK, data)
 		}
-
-		RespondWithJSON(w, http.StatusOK, data)
-
-	case database.TypeBot:
-		data, err := dbh.GetBotIdentifiers(identifier)
-		if err != nil {
-			log.Printf("Failed to get bot data by identifier %v", identifier)
-			RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve data")
-			return
-		}
-
-		RespondWithJSON(w, http.StatusOK, data)
-
-	case database.TypeLine:
-		data, err := dbh.GetLineIdentifiers(identifier)
-		if err != nil {
-			log.Printf("Failed to get line data by identifier %v", identifier)
-			RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve data")
-			return
-		}
-
-		RespondWithJSON(w, http.StatusOK, data)
-
-	default:
-		// impossible to reach here
-		log.Print("You've made impossible not possible! Nice!")
-		RespondWithError(w, http.StatusInternalServerError, "Nice!")
 	}
 }
 

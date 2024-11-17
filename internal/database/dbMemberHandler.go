@@ -158,6 +158,10 @@ func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) ([]models.M
 		return nil, err
 	}
 
+	if successCount == 0 {
+		return nil, fmt.Errorf("Failed to insert members %v", members)
+	}
+
 	// Return the number of successful insertions
 	return members, nil
 }
@@ -321,42 +325,6 @@ func (dbh *DBHandler) GetMultipleMembersByIdentifiers(identifiers []string) ([]*
 	}
 
 	return members, nil
-}
-
-func (dbh *DBHandler) GetMemberIdentifiers(identifier string) ([]string, error) {
-	err := dbh.openConnection()
-	if err != nil {
-		log.Print("There's been an error getting the DB handler! ", err.Error())
-		return nil, err
-	}
-	defer dbh.DB.Close()
-
-	if !AllowedMemberCols[identifier] {
-		return nil, fmt.Errorf("invalid identifier name: %s", identifier)
-	}
-
-	ident := identifier[:len(identifier)-1]
-	query := fmt.Sprintf("SELECT %s FROM members", ident)
-
-	rows, err := dbh.DB.Query(query)
-	if err != nil {
-		log.Print("There's been an error retrieving member data. " + err.Error())
-		return nil, err
-	}
-
-	var results []string
-
-	for rows.Next() {
-		var content string
-
-		if err := rows.Scan(&content); err != nil {
-			log.Printf("There's been an error scanning the member data. %v", err)
-			return nil, err
-		}
-
-		results = append(results, content)
-	}
-	return results, nil
 }
 
 func (dbh *DBHandler) GetMemberByIdentifier(identifier string) (*models.Member, error) {
@@ -544,7 +512,6 @@ func (dbh *DBHandler) UpdateMemberByIdentifier(u models.Member, identifier strin
 }
 
 func (dbh *DBHandler) InsertRole(r models.Role) (*models.Role, error) {
-
 	err := r.VerifyRole()
 	if err != nil {
 		log.Print("Invalid field on Role. ", err.Error())
@@ -560,7 +527,6 @@ func (dbh *DBHandler) InsertRole(r models.Role) (*models.Role, error) {
 	res, err := dbh.DB.Exec(`INSERT INTO roles (userid, rolename, rolecolor) 
 		VALUES (?, ?, ?)`,
 		r.Userid, r.Rolename, r.Rolecolor)
-
 	if err != nil {
 		log.Printf("There's been an error inserting the role %v in the DB."+err.Error(), r)
 		return nil, err
@@ -578,7 +544,6 @@ func (dbh *DBHandler) InsertRole(r models.Role) (*models.Role, error) {
 }
 
 func (dbh *DBHandler) InsertMultipleRoles(roles []models.Role) (string, error) {
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error creating the DB handler: %v", err)
@@ -598,7 +563,6 @@ func (dbh *DBHandler) InsertMultipleRoles(roles []models.Role) (string, error) {
 	// Prepare the SQL statement for inserting members
 	stmt, err := tx.Prepare(`INSERT INTO roles (userid, rolename, rolecolor) 
 		VALUES (?, ?, ?)`)
-
 	if err != nil {
 		log.Printf("Failed to prepare statement: %v", err)
 		return "Failed to prepare statement", err
@@ -648,7 +612,6 @@ func (dbh *DBHandler) InsertMultipleRoles(roles []models.Role) (string, error) {
 }
 
 func (dbh *DBHandler) GetAllRoles() ([]*models.Role, error) {
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error creating the DB handler..." + err.Error())
@@ -682,7 +645,6 @@ func (dbh *DBHandler) GetAllRoles() ([]*models.Role, error) {
 }
 
 func (dbh *DBHandler) GetRoleByIdentifier(identifier string) (*models.Role, error) {
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error creating the DB handler..." + err.Error())
@@ -697,7 +659,6 @@ func (dbh *DBHandler) GetRoleByIdentifier(identifier string) (*models.Role, erro
 		row = dbh.DB.QueryRow("SELECT * FROM roles WHERE id = ?", identifier)
 	} else {
 		row = dbh.DB.QueryRow("SELECT * FROM roles WHERE rolename = ?", identifier)
-
 	}
 
 	role := models.Role{}
@@ -715,7 +676,6 @@ func (dbh *DBHandler) GetRoleByIdentifier(identifier string) (*models.Role, erro
 }
 
 func (dbh *DBHandler) DeleteRoleByIdentifier(identifier string) (string, error) {
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error creating the DB handler..." + err.Error())
@@ -727,11 +687,9 @@ func (dbh *DBHandler) DeleteRoleByIdentifier(identifier string) (string, error) 
 	var res sql.Result
 
 	if utils.IsNumeric(identifier) {
-
 		res, err = dbh.DB.Exec(`DELETE FROM roles WHERE id = ?`, identifier)
 	} else {
 		res, err = dbh.DB.Exec(`DELETE FROM roles WHERE rolename = ?`, identifier)
-
 	}
 
 	if err != nil {
@@ -749,7 +707,6 @@ func (dbh *DBHandler) DeleteRoleByIdentifier(identifier string) (string, error) 
 }
 
 func (dbh *DBHandler) UpdateRoleByIdentifier(r models.Role, identifier string) (string, error) {
-
 	err := dbh.openConnection()
 	if err != nil {
 		log.Printf("There's been an error creating the DB handler..." + err.Error())
@@ -766,7 +723,6 @@ func (dbh *DBHandler) UpdateRoleByIdentifier(r models.Role, identifier string) (
 	} else {
 		res, err = dbh.DB.Exec(`UPDATE role SET userid = ?, rolename = ?, rolecolor = ? WHERE rolename = ?`,
 			r.Userid, r.Rolename, r.Rolecolor, identifier)
-
 	}
 
 	if err != nil {

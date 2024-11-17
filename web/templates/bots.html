@@ -13,7 +13,7 @@
                 <!-- Style each span with a dynamic background color -->
                 <span class="line-divider" style="--i:{{ $index }}; transform: rotate(calc(360deg / {{ $total }} * var(--i)));"></span>
                 <div class="bot-slice" style="--i:{{ $index }}; --total: {{ $total }}; --bg-color: rgba(20+(5*{{ $index }}), 230-(4*{{ $index }}), 70+(4*{{ $index }}), 0.2);">
-                    <div class="bot-text">{{ $bot.Name }}</div>
+                    <div class="bot-text">{{ $bot.Username }}</div>
                 </div>
             {{ end }}
         </div>

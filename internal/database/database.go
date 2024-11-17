@@ -20,20 +20,15 @@ const (
 	TypeMemberRoles   string = "member_roles"
 	InitSQLScriptPath string = "/internal/database/sqlscripts/db_init.sql"
 	INITsql           string = `
-		CREATE TABLE IF NOT EXISTS roles 
-		(
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			name TEXT UNIQUE
-		);
-		
-CREATE TABLE IF NOT EXISTS member_roles 
+CREATE TABLE IF NOT EXISTS roles 
 (
-	memberid INTEGER,
-	roleid INTEGER,
-	PRIMARY KEY (memberid, roleid),
-	FOREIGN KEY (memberid) REFERENCES members (id),
-	FOREIGN KEY (roleid) REFERENCES roles (id)
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	userid INTEGER,
+	rolename TEXT,
+	rolecolor TEXT,
+	foreign key (userid) references members (id) 
 );
+		
 CREATE TABLE IF NOT EXISTS members 
 (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -73,6 +68,15 @@ CREATE TABLE IF NOT EXISTS lines (
 	ltype varchar(255),
 	createdat DATETIME DEFAULT CURRENT_TIMESTAMP,
 	foreign key (bid) references bots (botid)
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+	messageid	integer primary key AUTOINCREMENT,
+	userid		integer,
+	content		text,
+	channel		text,
+	createdat	text,
+	foreign key (userid) references members (id)
 );
 `
 )
@@ -114,15 +118,15 @@ var (
 
 	AllowedMemberCols = map[string]bool{
 		// Members
-		"id":         true,
-		"guild":      true,
-		"username":   true,
-		"nickname":   true,
-		"avatarurl":  true,
-		"usercolor":  true,
-		"msgcount":   true,
-		"joinedat":   true,
-		"userstatus": true,
+		"id":        true,
+		"guild":     true,
+		"username":  true,
+		"nickname":  true,
+		"avatarurl": true,
+		"usercolor": true,
+		"msgcount":  true,
+		"joinedat":  true,
+		"status":    true,
 	}
 
 	AllowedBotCols = map[string]bool{

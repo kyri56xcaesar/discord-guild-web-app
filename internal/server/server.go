@@ -122,9 +122,9 @@ func (s *Server) routes() {
 	guildRouter.HandleFunc("/delete/lines", UDMultipleData).Methods("DELETE", "PUT", "PATCH")
 
 	// Utility endpoints and Metrics
-	guildRouter.HandleFunc("/get/members/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
-	guildRouter.HandleFunc("/get/bots/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
-	guildRouter.HandleFunc("/get/lines/{identifier:[a-zA-Z]+}", DataHandler).Methods("GET")
+	guildRouter.HandleFunc("/get/members/{identifier:[a-zA-Z,]+}", DataHandler).Methods("GET")
+	guildRouter.HandleFunc("/get/bots/{identifier:[a-zA-Z,]+}", DataHandler).Methods("GET")
+	guildRouter.HandleFunc("/get/lines/{identifier:[a-zA-Z,]+}", DataHandler).Methods("GET")
 
 	guildRouter.HandleFunc("/data/members", DataIndexHandler).Methods("GET")
 	guildRouter.HandleFunc("/data/bots", DataIndexHandler).Methods("GET")
