@@ -102,3 +102,28 @@ func ClientsHandler(w http.ResponseWriter, r *http.Request) {
 
 	tmpl.Execute(w, nil)
 }
+
+func AscLoginHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
+
+	switch r.Method {
+	case http.MethodPost:
+	case http.MethodGet:
+		tmplPath := filepath.Join("web", "templates", "ascend-login.html")
+		tmpl, err := template.New("ascend-login.html").Funcs(funcMap).ParseFiles(tmplPath)
+		if err != nil {
+			log.Print("Error loading template. " + err.Error())
+			RespondWithError(w, http.StatusInternalServerError, "Error loading template")
+			return
+		}
+
+		err = tmpl.Execute(w, nil)
+		if err != nil {
+			log.Printf("Error executing template: %v", err)
+			RespondWithError(w, http.StatusInternalServerError, "Error executing template")
+		}
+
+	default:
+		RespondWithError(w, http.StatusMethodNotAllowed, "Not allowed.")
+	}
+}

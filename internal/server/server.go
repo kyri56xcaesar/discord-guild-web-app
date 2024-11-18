@@ -89,9 +89,10 @@ func (s *Server) routes() {
 
 	// Root handler for health check
 	// Templates
-	s.Router.HandleFunc("/", RootHandler)
-	s.Router.HandleFunc("/dbots", BotsDHandler)
-	s.Router.HandleFunc("/hof", HofHandler)
+	s.Router.HandleFunc("/", RootHandler).Methods("GET")
+	s.Router.HandleFunc("/dbots", BotsDHandler).Methods("GET")
+	s.Router.HandleFunc("/hof", HofHandler).Methods("GET")
+	s.Router.HandleFunc("/asc-login", AscLoginHandler).Methods("GET", "POST")
 
 	s.Router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir(assetsPath))))
 	// Admin (Must Verify)

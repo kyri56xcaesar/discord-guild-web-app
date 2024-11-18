@@ -66,5 +66,3 @@ function hexToRGBA(hex_string, alpha = 1) {
 }
 
 
-
-
