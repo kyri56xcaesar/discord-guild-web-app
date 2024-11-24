@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"path/filepath"
 	"sort"
+	"time"
 
 	"kyri56xcaesar/discord_bots_app/internal/database"
+	"kyri56xcaesar/discord_bots_app/internal/models"
 )
 
 var funcMap = template.FuncMap{
@@ -34,18 +36,7 @@ func BotsDHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmplPath := filepath.Join("web", "templates", "bots.html")
-	tmpl, err := template.ParseFiles(tmplPath)
-	if err != nil {
-		http.Error(w, "Error loading template", http.StatusInternalServerError)
-		return
-	}
-
-	err = tmpl.Execute(w, bots)
-	if err != nil {
-		log.Printf("Error executing template: %v", err)
-		RespondWithError(w, http.StatusInternalServerError, "Error executing template")
-	}
+	RespondWithTemplate(w, http.StatusOK, filepath.Join("web", "templates", "bots.html"), "bots.html", nil, bots)
 }
 
 // Serve hof.html
@@ -76,52 +67,49 @@ func HofHandler(w http.ResponseWriter, r *http.Request) {
 		v.Usercolor += opacity
 	}
 
-	tmplPath := filepath.Join("web", "templates", "hof.html")
-	tmpl, err := template.New("hof.html").Funcs(funcMap).ParseFiles(tmplPath)
-	if err != nil {
-		log.Print("Error loading template. " + err.Error())
-		RespondWithError(w, http.StatusInternalServerError, "Error loading template")
-		return
-	}
-
-	err = tmpl.Execute(w, members)
-	if err != nil {
-		log.Printf("Error executing template: %v", err)
-		RespondWithError(w, http.StatusInternalServerError, "Error executing template")
-	}
+	RespondWithTemplate(w, http.StatusOK, filepath.Join("web", "templates", "hof.html"), "hof.html", funcMap, members)
 }
 
 // Serve clients.html
 func ClientsHandler(w http.ResponseWriter, r *http.Request) {
-	tmplPath := filepath.Join("web", "templates", "clients.html")
-	tmpl, err := template.ParseFiles(tmplPath)
-	if err != nil {
-		http.Error(w, "Error loading template", http.StatusInternalServerError)
-		return
-	}
-
-	tmpl.Execute(w, nil)
+	RespondWithTemplate(w, http.StatusOK, filepath.Join("web", "templates", "clients.html"), "", nil, nil)
 }
 
+// Require Autnentication!
 func AscLoginHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
 	switch r.Method {
 	case http.MethodPost:
-	case http.MethodGet:
-		tmplPath := filepath.Join("web", "templates", "ascend-login.html")
-		tmpl, err := template.New("ascend-login.html").Funcs(funcMap).ParseFiles(tmplPath)
-		if err != nil {
-			log.Print("Error loading template. " + err.Error())
-			RespondWithError(w, http.StatusInternalServerError, "Error loading template")
+
+		if err := r.ParseForm(); err != nil {
+			log.Printf("Error parsing form: %v", err)
+			RespondWithError(w, http.StatusBadRequest, "Invalid form data")
 			return
 		}
 
-		err = tmpl.Execute(w, nil)
-		if err != nil {
-			log.Printf("Error executing template: %v", err)
-			RespondWithError(w, http.StatusInternalServerError, "Error executing template")
+		user := models.User{
+			Username: r.FormValue("username"),
+			Password: r.FormValue("password"),
 		}
+
+		if err := user.VerifyUser(); err != nil {
+			log.Printf("Error verifying user: %v", err)
+			RespondWithError(w, http.StatusBadRequest, "invalid user credentials")
+			return
+		}
+
+		time.Sleep(time.Second * 2)
+		// TODO: Authenticate user
+
+		if user.Username == "diego" && user.Password == "diego" {
+			RespondWithTemplate(w, http.StatusOK, filepath.Join("web", "templates", "ascend-dashboard.html"), "ascend-dashboard.html", nil, user)
+		} else {
+			RespondWithError(w, http.StatusUnauthorized, "Unauthorized.")
+		}
+
+	case http.MethodGet:
+		RespondWithTemplate(w, http.StatusOK, filepath.Join("web", "templates", "ascend-login.html"), "ascend-login.html", nil, nil)
 
 	default:
 		RespondWithError(w, http.StatusMethodNotAllowed, "Not allowed.")

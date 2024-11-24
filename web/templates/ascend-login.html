@@ -4,9 +4,20 @@
   <div class="background-wrap">
     <div class="background"></div>
   </div>
-
-  <form id="accesspanel" method="post">
+  
+  <form 
+    id="accesspanel" 
+    method="post"
+    hx-post="/asc-login"
+    hx-target="#dynamic-display"
+    hx-swap="innerHTML"
+    hx-trigger="submit"
+    hx-indicator="#loading-indicator"
+    class="login-form"
+  >
     <h1 id="litheader">AECEND</h1>
+      
+
     <div class="inset">
       <p>
         <input type="text" name="username" id="email" placeholder="Login ID">
@@ -15,10 +26,99 @@
         <input type="password" name="password" id="password" placeholder="Access code">
       </p>
 
-      <input class="loginLoginValue" type="hidden" name="service" value="login" />
     </div>
-    <p class="p-container">
-      <input type="submit" name="Login" id="go" value="Authorize">
-    </p>
+
+    <div class="p-container">
+      <input type="submit" id="go" value="Authorize">
+    </div>
+
+    <span id="loading-indicator" class="loader"></span>
+
+    <div id="login-error" class="error-message" style="display: none; color: red; text-align: center; justify-content: center; margin-bottom: 10px;">
+      <!-- Error message -->
+    </div>
   </form>
+
+
 </div>
+<script>
+  // Listen for response errors
+  document.body.addEventListener('htmx:responseError', function(event){
+    // Hide the loading indicator if an error occurs
+    const loaderDiv = document.getElementById('loading-indicator');
+    if (loaderDiv) {
+      loaderDiv.style.display = 'none';
+    }
+
+    // Determine the status code and show the corresponding message
+    const statusCode = event.detail.xhr.status;
+    const errorDiv = document.getElementById('login-error');
+    let errorMessage = '';
+
+    if (statusCode >= 400 && statusCode < 500) {
+      switch (statusCode) {
+        case 400:
+          errorMessage = 'Invalid request.';
+          break;
+        case 401:
+          errorMessage = 'Unauthorized.';
+          break;
+        case 403:
+          errorMessage = 'Forbidden.';
+          break;
+        case 404:
+          errorMessage = 'Not found.';
+          break;
+        case 422:
+          errorMessage = 'Unprocessable Entity.';
+          break;
+        default:
+          errorMessage = 'Client error occurred. Please try again.';
+      }
+    } else if (statusCode >= 500 && statusCode < 600) {
+      errorMessage = 'Server error. Please try again later.';
+    } else {
+      errorMessage = 'An unknown error occurred.';
+    }
+
+    // Display the error message
+    if (errorDiv) {
+      errorDiv.style.display = 'flex';
+      errorDiv.style.alignItems = 'center';
+      errorDiv.innerHTML = `
+        <span>
+          <i class="fas fa-exclamation-triangle" style="color: red;"></i>
+          ${errorMessage}
+        </span>
+      `;
+      
+
+      // Automatically hide the error message after a few seconds
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 3000);
+
+      const loginForm = document.getElementById('accesspanel');
+      if (loginForm) {
+        loginForm.reset();
+      }
+    }
+  });
+
+  // Listen for beforeRequest to show the loading indicator
+  document.body.addEventListener('htmx:beforeRequest', function(event){
+    const loaderDiv = document.getElementById('loading-indicator');
+    if (loaderDiv) {
+      loaderDiv.style.display = 'block';
+    }
+  });
+
+  // Hide the loading indicator after a successful response
+  document.body.addEventListener('htmx:afterSwap', function(event) {
+    const loaderDiv = document.getElementById('loading-indicator');
+    if (loaderDiv) {
+      loaderDiv.style.display = 'none';
+    }
+  });
+</script>
+

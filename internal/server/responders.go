@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"os"
 	"text/template"
 )
 
@@ -53,17 +52,18 @@ func RespondWithHTML(w http.ResponseWriter, code int, html string) {
 	}
 }
 
-func RespondWithTemplate(w http.ResponseWriter, code int, templatePath string, data interface{}) {
+func RespondWithTemplate(w http.ResponseWriter, code int, templatePath, templateName string, funcMap template.FuncMap, data interface{}) {
 	// Parse the specified template file
 
-	currpath, err := os.Getwd()
-	if err != nil {
-		log.Print("Failed to retrieve current dir path...")
-		RespondWithError(w, http.StatusInternalServerError, "Error getting current directory")
-		return
-	}
+	//currpath, err := os.Getwd()
+	//if err != nil {
+	//	log.Print("Failed to retrieve current dir path...")
+	//	RespondWithError(w, http.StatusInternalServerError, "Error getting current directory")
+	//	return
+	//}
 
-	tmpl, err := template.ParseFiles(currpath + templatePath)
+	// tmpl, err := template.ParseFiles(currpath + templatePath)
+	tmpl, err := template.New(templateName).Funcs(funcMap).ParseFiles(templatePath)
 	if err != nil {
 		log.Printf("Failed to parse template: %v", err)
 		RespondWithError(w, http.StatusInternalServerError, "Error parsing template")

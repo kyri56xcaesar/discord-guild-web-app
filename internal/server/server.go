@@ -35,7 +35,7 @@ func (serror *ServerError) Error() string {
 // there should be a limit to the amount of servers possible
 const (
 	MAX_SERVERS  int    = 100
-	templatePath string = "/web/templates/index.html"
+	templatePath string = "web/templates/index.html"
 	assetsPath   string = "./web/assets"
 )
 
@@ -92,12 +92,13 @@ func (s *Server) routes() {
 	s.Router.HandleFunc("/", RootHandler).Methods("GET")
 	s.Router.HandleFunc("/dbots", BotsDHandler).Methods("GET")
 	s.Router.HandleFunc("/hof", HofHandler).Methods("GET")
-	s.Router.HandleFunc("/asc-login", AscLoginHandler).Methods("GET", "POST")
 
 	s.Router.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir(assetsPath))))
 	// Admin (Must Verify)
 	s.Router.HandleFunc("/admin/healthz", HealthCheck)
+	s.Router.HandleFunc("/asc-login", AscLoginHandler).Methods("GET", "POST")
 
+	// OPEN API
 	// Subrouter for /guild
 	guildRouter := s.Router.PathPrefix("/guild").Subrouter()
 

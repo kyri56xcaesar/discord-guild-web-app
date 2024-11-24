@@ -62,6 +62,17 @@ func ToUpperFirstLetter(s string) string {
 	return newStr
 }
 
+func IsValidUsername(s string) bool {
+	re := regexp.MustCompile(`^[\p{L}\p{N}\s\n$@#]+$`)
+
+	return re.MatchString(s)
+}
+
+func IsValidPassword(s string) bool {
+	// for now
+	return IsValidUTF8String(s)
+}
+
 func IsValidUTF8String(s string) bool {
 	// Updated regex to include space (\s) and new line (\n) characters
 	re := regexp.MustCompile(`^[\p{L}\p{N}\s\n!@#\$%\^&\*\(\):\?><\.\-]+$`)
@@ -228,4 +239,34 @@ func filterSingleStruct(value reflect.Value) ([]string, error) {
 	}
 
 	return filtered, nil
+}
+
+// splitAndMap is a higher-order function that splits a string by a separator and applies a mapper function to each part.
+func SplitAndMap(input, sep string, mapper func(string) (string, string)) map[string]string {
+	parts := strings.Split(input, sep)
+	result := make(map[string]string)
+	for _, part := range parts {
+		key, value := mapper(part)
+		if key != "" {
+			result[key] = value
+		}
+	}
+	return result
+}
+
+// parseKeyValue is a mapper function that parses a "key=value" string into a key and value.
+func ParseKeyValue(part string) (string, string) {
+	kv := strings.SplitN(part, "=", 2)
+	if len(kv) != 2 {
+		return "", ""
+	}
+	key, err := url.QueryUnescape(kv[0])
+	if err != nil {
+		return "", ""
+	}
+	value, err := url.QueryUnescape(kv[1])
+	if err != nil {
+		return "", ""
+	}
+	return key, value
 }

@@ -19,7 +19,7 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
 	// RespondWithJSON(w, http.StatusOK, "Up")
-	RespondWithTemplate(w, http.StatusOK, templatePath, nil)
+	RespondWithTemplate(w, http.StatusOK, templatePath, "index.html", nil, nil)
 }
 
 // GUILD HANDLERS
