@@ -2,7 +2,6 @@ package minioth
 
 import (
 	"crypto/sha256"
-	"hash"
 )
 
 // I want to implement a simplistic but handy user/group state system.
@@ -14,6 +13,8 @@ const (
 	MINIOTH_PASSWD string = "minioth/mpass"
 	MINIOTH_GROUP  string = "minioth/mgroup"
 	MINIOTH_SHADOW string = "minioth/mshadow"
+
+	MINIOTH_DB string = "minioth.db"
 )
 
 type userspace interface {
@@ -47,15 +48,42 @@ type Group struct {
 }
 
 func Hash(password string) []byte {
-	var hasher hash.Hash = sha256.New()
+	hasher := sha256.New()
 
 	return hasher.Sum([]byte(password))
 }
 
 type Minioth struct {
-	root       *User
+	dbPath string
+
+	root       User
 	usercount  int
 	groupcount int
+
+	useDB bool
+}
+
+func NewMinioth(rootname string, useDb bool, dbPath string) Minioth {
+	return Minioth{
+		dbPath: dbPath,
+		root: User{
+			Name: rootname,
+			Password: Password{
+				Hashpass:       "",
+				ExpirationDate: "",
+				Length:         0,
+			},
+			Groups: nil,
+			Uid:    1,
+		},
+		usercount:  0,
+		groupcount: 0,
+		useDB:      useDb,
+	}
+}
+
+func (m *Minioth) sync() error {
+	return nil
 }
 
 func (m *Minioth) useradd(username, password string, groups []Group) error {

@@ -17,6 +17,11 @@ build:
 run: build
 	./$(SRC_PATH)$(APP_NAME)
 
+.PHONY: mini
+mini: 
+	go build -o cmd/minioth/minioth cmd/minioth/main.go
+	./cmd/minioth/minioth
+
 # Clean up binaries and other generated files
 .PHONY: clean
 clean:
