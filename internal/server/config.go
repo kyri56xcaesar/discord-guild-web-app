@@ -37,7 +37,7 @@ func loadConfig(path string) *EnvConfig {
 		HTTPPort:       getEnv("HTTP_PORT", "80"),
 		HTTPSPort:      getEnv("HTTPS_PORT", "443"),
 		IP:             getEnv("IP", "localhost"),
-		DBfile:         getEnv("DB_NAME", "dads.db"),
+		DBfile:         getEnv("DB_NAME", "data/dads.db"),
 		AllowedOrigins: getEnvs("ALLOWED_ORIGINS", []string{"None"}),
 		AllowedHeaders: getEnvs("ALLOWED_HEADERS", nil),
 		AllowedMethods: getEnvs("ALLOWED_METHODS", nil),
