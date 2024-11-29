@@ -10,7 +10,8 @@
 *.crt
 *.key
 
-data
+api
+minioth
 pycache
 vendor
 app
