@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"kyri56xcaesar/discord_bots_app/internal/minioth"
+	"github.com/kyri56xcaesar/minioth"
 )
 
 func main() {
