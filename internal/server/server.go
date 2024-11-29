@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"kyri56xcaesar/discord_bots_app/internal/database"
+	"kyri56xcaesar/discord_bots_app/internal/serverconfig"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -22,7 +23,7 @@ import (
 
 type Server struct {
 	Router   *mux.Router
-	Config   *EnvConfig // sqlite .db filepath
+	Config   *serverconfig.EnvConfig // sqlite .db filepath
 	serverID int
 }
 
@@ -62,9 +63,9 @@ func NewServer(conf string) (*Server, error) {
 
 	server.serverID = currentIndex
 	server.Router = mux.NewRouter()
-	server.Config = loadConfig(conf)
+	server.Config = serverconfig.LoadConfig(conf)
 
-	log.Printf("ServerID: %d\n[CFG]...Loading configurations...\n%v\n", currentIndex, server.Config.toString())
+	log.Printf("ServerID: %d\n[CFG]...Loading configurations...\n%v\n", currentIndex, server.Config.ToString())
 
 	server.routes()
 
@@ -157,6 +158,7 @@ func (s *Server) Start() {
 	if err = database.InitDB(s.Config.DBfile, scriptPath); err != nil {
 		log.Printf("[INIT DB]Error during db initialization: %v", err)
 		// Should handle case that it is fatal...
+		// TODO: handle cases
 	}
 	// Set database reference
 	DBName = s.Config.DBfile
@@ -248,7 +250,7 @@ func (s *Server) restartServer(srv *http.Server) {
 	}
 	log.Println("Server shut down for restart")
 
-	config := loadConfig(s.Config.ConfigPath)
+	config := serverconfig.LoadConfig(s.Config.ConfigPath)
 
 	log.Printf("Config file: %+v", config)
 

@@ -1,28 +1,24 @@
 # Variables
-APP_NAME := discordwebapp
-SRC_PATH := cmd/api/
-SRC := main.go 
+APP_NAME := cmd/api/discordwebapp
+APP_SRC := cmd/api/main.go 
 
-# Default target: Build and run the application
+M_NAME := cmd/minioth/minioth
+M_SRC := cmd/minioth/main.go
+
 .PHONY: all
-all: build run
+all: app mini
 
-# Build the application
-.PHONY: build
-build:
-	go build -o $(SRC_PATH)$(APP_NAME) $(SRC_PATH)$(SRC)
-
-# Run the application
-.PHONY: run
-run: build
-	./$(SRC_PATH)$(APP_NAME)
+.PHONY: app
+app: 
+	go build -o ${APP_NAME} ${APP_SRC}
+	./${APP_NAME}
 
 .PHONY: mini
 mini: 
-	go build -o cmd/minioth/minioth cmd/minioth/main.go
-	./cmd/minioth/minioth
+	go build -o ${M_NAME} ${M_SRC}
+	./${M_NAME}
 
 # Clean up binaries and other generated files
 .PHONY: clean
 clean:
-	rm -f $(SRC_PATH)$(APP_NAME)
+	rm -f ${APP_NAME} ${M_NAME}

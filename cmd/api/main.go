@@ -8,7 +8,7 @@ import (
 // Argument given
 // Goroutines
 func main() {
-	server, err := server.NewServer("server.env")
+	server, err := server.NewServer("configs/server.env")
 	if err == nil {
 		server.Start()
 	}

@@ -26,6 +26,6 @@ func main() {
 	mauth.Userdel("ntomatas")
 	mauth.Useradd("Katsaplias", "", "OKatsapleas", "", "")
 
-	m := minioth.NewMSerivce(&mauth)
+	m := minioth.NewMSerivce(&mauth, "configs/minioth.env")
 	m.ServeHTTP()
 }

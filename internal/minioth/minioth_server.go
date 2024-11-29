@@ -1,52 +1,36 @@
 package minioth
 
 import (
-	"bufio"
 	"context"
 	"log"
 	"net/http"
-	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"kyri56xcaesar/discord_bots_app/internal/serverconfig"
 )
 
 type MService struct {
 	Engine  *gin.Engine
-	Config  *MConfig
+	Config  *serverconfig.EnvConfig
 	Minioth *Minioth
 }
 
-type MConfig struct {
-	ConfPath string
-	Ip       string
-	Port     string
-}
-
 const (
-	DEFAULT_conf_name string = "minioth.conf"
-	DEFAULT_conf_path string = "configs/"
+	DEFAULT_conf_name      string = "minioth.env"
+	DEFAULT_conf_path      string = "configs/"
+	DEFAULT_audit_log_path string = "data/minioth.log"
 )
 
-func newConfig() MConfig {
-	return MConfig{
-		ConfPath: DEFAULT_conf_path + DEFAULT_conf_name,
-		Ip:       "localhost",
-		Port:     "8081",
-	}
-}
-
-func NewMSerivce(m *Minioth) MService {
-	cfg := newConfig()
-	cfg.loadConfig("")
+func NewMSerivce(m *Minioth, conf string) MService {
+	cfg := serverconfig.LoadConfig(conf)
 
 	srv := MService{
 		Minioth: m,
 		Engine:  gin.Default(),
-		Config:  &cfg,
+		Config:  cfg,
 	}
 
 	return srv
@@ -57,32 +41,50 @@ func (srv *MService) ServeHTTP() {
 
 	apiV1 := srv.Engine.Group("/v1")
 	{
-		apiV1.GET("/user", func(c *gin.Context) {
+		// Should implement the following endpoints:
+		// /login, /logout, /register, /user/me, /token/refresh,
+		// /groups, /groups/{groupID}/assign/{userID}
+		// /token/refresh
+		// /health, /audit/logs, /admin/users, /admin/users
+
+		apiV1.POST("/login", func(c *gin.Context) {
+		})
+
+		apiV1.POST("/register", func(c *gin.Context) {
+		})
+
+		apiV1.POST("/logout", func(c *gin.Context) {
+		})
+
+		apiV1.POST("/token/refresh", func(c *gin.Context) {
+		})
+
+		apiV1.POST("/user/me", func(c *gin.Context) {
+		})
+	}
+	admin := srv.Engine.Group("/admin")
+	{
+		admin.GET("/health", func(c *gin.Context) {
+		})
+
+		admin.GET("/audit/logs", func(c *gin.Context) {
+		})
+
+		admin.GET("/admin/users", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
 				"content": minioth.Select("users"),
 			})
 		})
-		apiV1.POST("/user", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{
-				"status": "activo",
-			})
-		})
 
-		apiV1.GET("/group", func(c *gin.Context) {
+		admin.GET("/admin/groups", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
 				"content": minioth.Select("groups"),
 			})
 		})
-
-		apiV1.POST("/group", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{
-				"status": "activo",
-			})
-		})
-
 	}
+
 	server := &http.Server{
-		Addr:              srv.Config.Ip + ":" + srv.Config.Port,
+		Addr:              srv.Config.Addr(),
 		Handler:           srv.Engine,
 		ReadHeaderTimeout: time.Second * 5,
 	}
@@ -107,56 +109,4 @@ func (srv *MService) ServeHTTP() {
 	}
 
 	log.Println("Server exiting")
-}
-
-func (cfg *MConfig) loadConfig(path string) error {
-	var confFile *os.File
-	var err error
-
-	curpath, err := os.Getwd()
-	cfg.ConfPath = curpath + path
-	log.Printf("Current path: %v", curpath)
-	confFile, err = os.Open(path)
-	if err != nil {
-		log.Printf("Given Path: %v, err: %v", path, err)
-		confFile, err = os.Open(DEFAULT_conf_path + DEFAULT_conf_name)
-		if err != nil {
-			log.Print(err)
-			return err
-		}
-		log.Print("Default config opened.")
-	}
-	defer confFile.Close()
-
-	scanner := bufio.NewScanner(confFile)
-	for scanner.Scan() {
-		line := scanner.Text()
-		line = strings.TrimSpace(line)
-		if len(line) == 0 || strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		parts := strings.SplitN(line, "=", 2)
-		if len(parts) != 2 {
-			continue
-		}
-
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
-
-		switch key {
-		case "PORT":
-			if value != "" {
-				cfg.Port = value
-			}
-		case "IP":
-			if value != "" {
-				cfg.Ip = value
-			}
-
-		default:
-		}
-	}
-
-	return nil
 }
