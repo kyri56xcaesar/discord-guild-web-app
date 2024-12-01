@@ -14,8 +14,8 @@ import (
 	"syscall"
 	"time"
 
-	"kyri56xcaesar/discord_bots_app/internal/database"
-	"kyri56xcaesar/discord_bots_app/internal/serverconfig"
+	"kyri56xcaesar/discord-guild-web-app/internal/database"
+	"kyri56xcaesar/discord-guild-web-app/internal/serverconfig"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -91,6 +91,7 @@ func (s *Server) routes() {
 	// Root handler for health check
 	// Templates
 	s.Router.HandleFunc("/", RootHandler).Methods("GET")
+	s.Router.HandleFunc("/welcome", WelcomeHandler).Methods("GET")
 	s.Router.HandleFunc("/dbots", BotsDHandler).Methods("GET")
 	s.Router.HandleFunc("/hof", HofHandler).Methods("GET")
 

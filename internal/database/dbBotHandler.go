@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"kyri56xcaesar/discord_bots_app/internal/models"
-	"kyri56xcaesar/discord_bots_app/internal/utils"
+	"kyri56xcaesar/discord-guild-web-app/internal/models"
+	"kyri56xcaesar/discord-guild-web-app/internal/utils"
 )
 
 // Bots

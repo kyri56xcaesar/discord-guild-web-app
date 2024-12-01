@@ -9,12 +9,12 @@ M_SRC := cmd/minioth/main.go
 all: app mini
 
 .PHONY: app
-app: 
+app:
 	go build -o ${APP_NAME} ${APP_SRC}
 	./${APP_NAME}
 
 .PHONY: mini
-mini: 
+mini:
 	go build -o ${M_NAME} ${M_SRC}
 	./${M_NAME}
 

@@ -1,7 +1,7 @@
 package models
 
 import (
-	"kyri56xcaesar/discord_bots_app/internal/utils"
+	"kyri56xcaesar/discord-guild-web-app/internal/utils"
 )
 
 type User struct {

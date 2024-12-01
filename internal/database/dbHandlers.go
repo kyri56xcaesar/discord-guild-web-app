@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	"kyri56xcaesar/discord_bots_app/internal/models"
+	"kyri56xcaesar/discord-guild-web-app/internal/models"
 )
 
 func (dbh *DBHandler) Metrics(mtype string) (string, error) {

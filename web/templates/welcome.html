@@ -1,0 +1,68 @@
+<div class="home-header">
+  <span> The content...! </span>
+  <button onclick="toggleDarkMode()" style="background: transparent; margin-left: 30px;">💡</button>
+</div>
+
+<div class="home-container">
+  <!-- Search Bar -->
+  <div class="search-bar">
+      <input type="text" placeholder="Search for..." hx-get="/search-news" hx-trigger="keyup changed" hx-target="#news-container" hx-swap="innerHTML">
+  </div>
+
+  <!-- Categories -->
+  <div class="categories">
+      <button hx-get="/fetch-category?category=trending" hx-target="#news-container" hx-swap="innerHTML">League</button>
+      <button hx-get="/fetch-category?category=latest" hx-target="#news-container" hx-swap="innerHTML">Latest</button>
+  </div>
+
+  <!-- Featured News Carousel -->
+  <div class="carousel" id="featured-news">
+      <div hx-get="/fetch-featured-news" hx-trigger="load" hx-target="#featured-news" hx-swap="innerHTML">
+          Loading featured news...
+      </div>
+  </div>
+
+  <!-- News Container -->
+  <div id="news-container">
+    <!-- News Articles will load dynamically here -->
+    <div hx-get="/fetch-news" hx-trigger="load" hx-target="#news-container" hx-swap="beforeend" class="loader">
+        Loading news...
+    </div>
+  </div>
+
+  <!-- Poll -->
+  <div class="poll">
+      <h3>Vote on the motherfucker of the week.</h3>
+          <button hx-post="/vote?option=garfield">Placeholder</button>
+          <div hx-get="/fetch-poll-results" hx-trigger="load" hx-swap="innerHTML"></div>
+  </div>
+
+  <!-- User Submission -->
+  <div class="submission-form">
+      <h3>Submit some shit:</h3>
+      <form hx-post="/submit-news" hx-target="#submission-feedback" hx-swap="innerHTML">
+        <textarea name="news" placeholder="Your news..." required></textarea>
+        <button type="submit">Submit</button>
+      </form>
+      <div id="submission-feedback"></div>
+  </div>
+
+  <!-- Load More Button -->
+  <a href="#" class="load-more" hx-get="/fetch-news" hx-target="#news-container" hx-swap="beforeend">
+    Load More News 🚀
+  </a>
+</div>
+
+    <script>
+        // Infinite Scrolling
+        document.addEventListener("scroll", function () {
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
+                document.querySelector(".load-more").click();
+            }
+        });
+
+        // Dark Mode Toggle
+        function toggleDarkMode() {
+            document.getElementById("dynamic-display").classList.toggle("dark-mode");
+        }
+    </script>

@@ -8,8 +8,8 @@ import (
 	"sort"
 	"time"
 
-	"kyri56xcaesar/discord_bots_app/internal/database"
-	"kyri56xcaesar/discord_bots_app/internal/models"
+	"kyri56xcaesar/discord-guild-web-app/internal/database"
+	"kyri56xcaesar/discord-guild-web-app/internal/models"
 )
 
 var funcMap = template.FuncMap{
@@ -19,6 +19,12 @@ var funcMap = template.FuncMap{
 	"dec": func(i int) int {
 		return i - 1
 	},
+}
+
+func WelcomeHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
+
+	RespondWithTemplate(w, http.StatusOK, filepath.Join("web", "templates", "welcome.html"), "welcome.html", nil, nil)
 }
 
 // Serve bots.html

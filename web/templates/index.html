@@ -8,6 +8,8 @@
     <link rel="stylesheet" type="text/css" href="assets/css/bots.css">
     <link rel="stylesheet" type="text/css" href="assets/css/mobile.css">
     <link rel="stylesheet" type="text/css" href="assets/css/asc-login.css">
+    <link rel="stylesheet" type="text/css" href="assets/css/welcome.css">
+
 
 
     <title>$Dads HQ</title>
@@ -34,19 +36,21 @@
     <hr>
     <div id="main-siderbar" class="sidebar"> 
         <div id="logo-sidebar" class="mini-logo">
-            <h2>$$$</h2>
-            <hr>
+          <a href="#" hx-trigger="click" hx-get="/welcome" hx-target="#dynamic-display" hx-swap="innerHTML" >$$$</a>
+          <hr>
         </div>
         <div class="top-sidebar">
-            <a href="#" hx-get="/hof/" hx-target="#dynamic-display" hx-swap="innerHTML">Hall of Fame</a>
-            <a href="#" hx-get="/dbots" hx-target="#dynamic-display" hx-swap="innerHTML">Ρομποτάκια</a>            
+          <a id="hof-btn" href="#" hx-get="/hof/" hx-target="#dynamic-display" hx-swap="innerHTML">Hall of Fame</a>
+          <hr>  
+          <a id="bots-btn" href="#" hx-get="/dbots" hx-target="#dynamic-display" hx-swap="innerHTML">Ρομποτάκια</a>            
+          <hr>
         </div>
         <div class="bottom-sidebar">
             <a href="#" hx-get="/asc-login" hx-target="#dynamic-display" hx-swap="innerHTML">A S C E N D</a>
         </div>
     </div>
     <main class="scrollable-container" id="main-content">
-        <div id="dynamic-display"></div>
+        <div id="dynamic-display"  hx-trigger="load" hx-get="/welcome" hx-target="#dynamic-display" hx-swap="innerHTML"></div>
     </main>
     <script src="assets/js/index.js"></script>
     <script src="assets/js/hof.js"></script>    

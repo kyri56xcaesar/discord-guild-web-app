@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"kyri56xcaesar/discord_bots_app/internal/models"
-	"kyri56xcaesar/discord_bots_app/internal/utils"
+	"kyri56xcaesar/discord-guild-web-app/internal/models"
+	"kyri56xcaesar/discord-guild-web-app/internal/utils"
 
 	_ "modernc.org/sqlite"
 )
@@ -485,7 +485,7 @@ func (dbh *DBHandler) UpdateMemberByIdentifier(u models.Member, identifier strin
 
 	if utils.IsNumeric(identifier) {
 		res, err = dbh.DB.Exec(`UPDATE members SET guild = ?, id = ?, username = ?, nickname = ?, avatarurl = ?, 
-		displayavatarurl = ?, bannerurl = ?, displaybannerurl = ?, usercolor, 
+		displayavatarurl = ?, bannerurl = ?, displaybannerurl = ?, usercolor = ?, 
 		joinedat = ?, status = ?, msgcount = ? WHERE id = ?`,
 			u.Guild, u.Id, u.Username, u.Nickname, u.Avatarurl, u.Displaybannerurl, u.Bannerurl,
 			u.Displaybannerurl, u.Usercolor, u.Joinedat, u.Status, u.Msgcount, identifier)

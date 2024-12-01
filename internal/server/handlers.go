@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"kyri56xcaesar/discord_bots_app/internal/database"
-	"kyri56xcaesar/discord_bots_app/internal/models"
-	"kyri56xcaesar/discord_bots_app/internal/utils"
+	"kyri56xcaesar/discord-guild-web-app/internal/database"
+	"kyri56xcaesar/discord-guild-web-app/internal/models"
+	"kyri56xcaesar/discord-guild-web-app/internal/utils"
 
 	"github.com/gorilla/mux"
 )
@@ -286,6 +286,8 @@ func MemberHandler(w http.ResponseWriter, r *http.Request) {
 			RespondWithError(w, http.StatusBadRequest, "Invalid JSON format")
 			return
 		}
+
+		log.Printf("updated member is: %+v", updatedMember)
 
 		if _, err := dbh.UpdateMemberByIdentifier(updatedMember, identifier); err != nil {
 			// log.Printf("Error updating member %v... : %v", identifier, err.Error())
@@ -653,12 +655,12 @@ func MetricsHandler(w http.ResponseWriter, r *http.Request) {
 
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v (Not Found)", r.Method, r.URL.Path)
-	RespondWithError(w, http.StatusNotFound, "Not Found")
+	RespondWithErrorTemplate(w, http.StatusNotFound, "Not found mate.")
 }
 
 func notAllowedHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v (Not Allowed)", r.Method, r.URL.Path)
-	RespondWithError(w, http.StatusMethodNotAllowed, "Not Allowed")
+	RespondWithErrorTemplate(w, http.StatusMethodNotAllowed, "Not allowed mate.")
 }
 
 func HealthCheck(w http.ResponseWriter, r *http.Request) {

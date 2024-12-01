@@ -1,0 +1,31 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Error</title>
+    <link rel="stylesheet" type="text/css" href="assets/css/error.css">
+    <link rel="stylesheet" type="text/css" href="assets/css/styles.css">
+    <link rel="icon" href="assets/icons/mozart_draw.jpg" type="inage.x-icon">
+
+</head>
+
+<header>
+    <div id="header">
+        <div id="title">
+            <h1 id="main-title"></h1>
+        </div>
+    </div>
+
+
+</header>
+
+<body>
+    <hr>
+    <div class="error">
+        <h1>Error {{ .Error }} </h1>
+        <div class="error-message"> <h2>{{ .Message }}</h2> </div>
+    </div>
+    <hr>
+</body>
+</html>

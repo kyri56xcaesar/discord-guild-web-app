@@ -1,7 +1,7 @@
 package main
 
 import (
-	"kyri56xcaesar/discord_bots_app/internal/server"
+	"kyri56xcaesar/discord-guild-web-app/internal/server"
 )
 
 // This will be reconfigured to be able to run multiple servers

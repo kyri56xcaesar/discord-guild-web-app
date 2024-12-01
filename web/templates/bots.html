@@ -1,3 +1,23 @@
+<script>
+    // Embed the bot data as a JSON array in the JavaScript
+    botsData = [
+        {{ range $bot := . }}
+        {
+            guild: "{{ $bot.Guild }}",
+            username: "{{ $bot.Username }}",
+            avatarurl: "{{ $bot.Avatarurl }}",
+            bannerurl: "{{ $bot.Bannerurl }}",
+            createdat: "{{ $bot.Createdat }}",
+            author: "{{ $bot.Author }}",
+            status: "{{ $bot.Status }}",
+            lines: {{ $bot.Lines }},
+            id: {{ $bot.Id }},
+            issinger: {{ $bot.Issinger }}
+        },
+        {{ end }}
+    ];
+</script>
+
 <div id="bots-main-container">
     <div id="bot-selector">
         <!-- Add your bot selector content here -->
@@ -12,49 +32,185 @@
             {{ range $index, $bot := . }}
                 <!-- Style each span with a dynamic background color -->
                 <span class="line-divider" style="--i:{{ $index }}; transform: rotate(calc(360deg / {{ $total }} * var(--i)));"></span>
-                <div class="bot-slice" style="--i:{{ $index }}; --total: {{ $total }}; --bg-color: rgba(20+(5*{{ $index }}), 230-(4*{{ $index }}), 70+(4*{{ $index }}), 0.2);">
-                    <div class="bot-text">{{ $bot.Username }}</div>
+                <div class="bot-slice" style="--i:{{ $index }}; --total: {{ $total }};">
+                  <div class="bot-text">
+                    <span>{{ $bot.Username }}</span>
+                  </div>
                 </div>
             {{ end }}
         </div>
     </div>
     <div id="bot-controller-menu">
-        <button onclick="rotateWheel(1)">Rotate Right</button>
-        <button onclick="rotateWheel(-1)">Rotate Left</button>
+        <div id="bot-controller-buttons">
+          <button onclick="rotateWheel(-1)">Left</button>
+          <button onclick="rotateWheel(1)">Right</button>
+        </div>
+        <div id="bot-list-div">
+          <!-- List -->
+          <ol class="bot-list">
+          {{ range $index, $bot := . }}
+        <li data-id="{{ $index }}"> 
+              <div class="bot-list-item">
+                <div class="bot-list-item-title">{{ $bot.Username }} </div> 
+                <div class="bot-list-item-details">{{ $bot.Guild }} ~/ {{ $bot.Author }} </div>
+              </div>
+            </li>   
+          {{ end }}
+          </ol>
+        </div>
     </div>
     <div id="bot-content">
         <!-- Bot content -->
-         <p> Test content</p>
     </div>
+</div>
+
+<div id="bot-more-container">
 </div>
 
 
 <script>
+    // Select all list items
+    listItems = document.querySelectorAll('.bot-list li');
+    botContentDiv = document.getElementById('bot-content');
+    console.log(listItems);    
+    
+    // Add click listeners to each list item
+    listItems.forEach((listItem, index) => {
+      listItem.addEventListener('click', () => {
+      // Extract information from the botsData array
+        const bot = botsData[index];
+        // Update the bot-content div with detailed information about the selected bot
+        botContentDiv.innerHTML = `
+                    <div class="bot-content-details">
+                      <h2>${bot.username}</h2>
+                      <hr>
+                      <p>Guild: ${bot.guild}</p>
+                      <p>Author: ${bot.author}</p>
+                      <p>Status: ${bot.status}</p>
+                      <p>Created at: ${bot.createdat}</p>
+                      <input value="View more" type="button" onClick="document.getElementById('bot-more-container').scrollIntoView();"></input>
+                    </div>
+                    <div class="bot-content-image">
+                      <img src="${bot.avatarurl}" alt="${bot.username}'s avatar" >
+                    </div>
+                `;
+        // Highlight the selected list item
+        listItems.forEach(item => item.classList.remove('selected'));
+        listItem.classList.add('selected');
+        // Optionally rotate the wheel to align with the selected bot
+        nextBot(index);
+      });
+    });
+
     currentRotation = 0;
-    totalDivisions = {{ len . }}; // You can pass this dynamically based on the number of bots
+    currentIndex = 0;
+    totalDivisions = botsData.length; // Dynamically set based on the number of bots
     wheel = document.getElementById("dads-wheel");
 
     // Function to rotate the wheel
     function rotateWheel(direction) {
         const angle = 360 / totalDivisions;
         currentRotation += angle * direction;
-
         // Apply the rotation to the wheel
         wheel.style.transform = `rotate(${currentRotation}deg)`;
+        currentIndex += direction
+        selectBot(Math.abs(currentIndex))
     }
 
     // Optionally, you could also implement a function to directly select a specific bot by its index:
-    function selectBot(index) {
+    function nextBot(index) {
         const angle = (360 / totalDivisions) * index;
         currentRotation = -angle; // Move the desired division into the focus area
         wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+        console.log("Selected bot index:", index);
+
+        document.querySelectorAll('.bot-text span').forEach((span, spanIndex) => {
+            span.classList.toggle('selected', spanIndex === index);
+        });
     }
 
-    document.querySelectorAll('#dads-wheel span').forEach((span, index) => {
+    function selectBot(id) {
+      id %= totalDivisions;
+      const bot = botsData[id];
+      listItems.forEach((listItem, index) => {
+        
+        const currentId = parseInt(listItem.getAttribute('data-id'))
+        if (currentId === id) {
+          botContentDiv.innerHTML = `
+                    <div class="bot-content-details">
+                      <h2>${bot.username}</h2>
+                      <hr>
+                      <p>Guild: ${bot.guild}</p>
+                      <p>Author: ${bot.author}</p>
+                      <p>Status: ${bot.status}</p>
+                      <p>Created at: ${bot.createdat}</p>
+                      <input value="View more" type="button" onClick=""></input>
+                    </div>
+                    <div class="bot-content-image">
+                      <img src="${bot.avatarurl}" alt="${bot.username}'s avatar" >
+                    </div>
+                `;
+
+          listItem.classList.add('selected');
+
+        } else {
+          listItem.classList.remove('selected');
+        }
+
+      });
+    }
+
+    document.querySelectorAll('.bot-text span').forEach((span, index) => {
         span.addEventListener('click', () => {
-            selectBot(index); // Rotate to the clicked division
+            nextBot(index); // Rotate to the clicked division
         });
     });
 
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') {
+        rotateWheel(-1);  // Rotate left when the left arrow key is pressed
+      } else if (event.key === 'ArrowRight') {
+        rotateWheel(1);   // Rotate right when the right arrow key is pressed
+      }
+    });
 
+    if (totalDivisions > 0) {
+      selectBot(currentIndex);
+    }
+
+  function startMovingAnnouncement(text, color) {
+    const container = document.getElementById('bot-selector');
+
+    // Create a span to hold the moving text
+    const textSpan = document.createElement('span');
+    textSpan.innerText = text;
+    textSpan.style.position = 'absolute';
+    textSpan.style.whiteSpace = 'nowrap';
+    textSpan.style.color = color;
+    textSpan.style.fontSize = '1.5em';
+    textSpan.style.transform = 'translateY(-50%)';
+
+    // Append the textSpan to the container
+    container.appendChild(textSpan);
+
+    // Initial position
+    posX = -textSpan.offsetWidth;
+
+    // Function to animate the text
+    function moveText() {
+      posX += 2; // Speed of movement; increase for faster scrolling
+      if (posX > container.offsetWidth) {
+        posX = -textSpan.offsetWidth; // Reset to the start when the end is reached
+      }
+      textSpan.style.left = `${posX}px`;
+      requestAnimationFrame(moveText);
+    }
+
+    // Start moving the text
+    moveText();
+  }
+
+  // Example usage:
+  startMovingAnnouncement('Breaking News: This is a scrolling text!', 'yellow');
 </script>
