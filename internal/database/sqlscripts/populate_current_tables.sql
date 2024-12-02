@@ -1,14 +1,14 @@
 INSERT INTO 
     bots (guild, username, avatarurl, bannerurl, createdat, author, status, issinger)
 VALUES 
-    ('$dads', 'StoufBot', 'None', 'None', '2023-04-25', 'kyri56xcaesar', 'active', 0), -- id 1 25-4-2023
-    ('$dads', 'KokeBot', 'None', 'None', '2023-04-25', 'kyri56xcaesar', 'active', 0), -- id 2 25-4-2023
-    ('$dads', 'SAKBot', 'None', 'None', '2023-04-25', 'kyri56xcaesar', 'active', 1), -- id 3 25-4-2023
-    ('$dads', 'VassanoBot', 'None', 'None', '2023-04-25', 'kyri56xcaesar', 'active', 0), -- id 4 25-4-2023
-    ('$dads', 'StratigosBot', 'None', 'None', '2023-04-25', 'kyri56xcaesar', 'sleeper', 0), -- id 5 25-4-2023
-    ('$dads', 'HayateBot', 'None', 'None', '2023-03-04', 'kyri56xcaesar', 'abandoned', 1), -- id 6 4-3-2023
-    ('$dads', 'SnakeBot', 'None', 'None', '2024-07-25', 'kyri56xcaesar', 'inprogress', 0), -- id 7 25-7-2024
-    ('$dads', 'ModiasBot', 'None', 'None', '2024-08-02', 'kyri56xcaesar', 'active', 0) -- id 8 2-8-2024
+    ('$dads', 'StoufBot', 'https://picsum.photos/200/300', 'None', '2023-04-25', 'kyri56xcaesar', 'active', 0), -- id 1 25-4-2023
+    ('$dads', 'KokeBot', 'https://picsum.photos/200/400', 'None', '2023-04-25', 'kyri56xcaesar', 'active', 0), -- id 2 25-4-2023
+    ('$dads', 'SAKBot', 'https://picsum.photos/300/400', 'None', '2023-04-25', 'kyri56xcaesar', 'active', 1), -- id 3 25-4-2023
+    ('$dads', 'VassanoBot', 'https://picsum.photos/300/300', 'None', '2023-04-25', 'kyri56xcaesar', 'active', 0), -- id 4 25-4-2023
+    ('$dads', 'StratigosBot', 'https://picsum.photos/200/200', 'None', '2023-04-25', 'kyri56xcaesar', 'sleeper', 0), -- id 5 25-4-2023
+    ('$dads', 'HayateBot', 'https://picsum.photos/500/500', 'None', '2023-03-04', 'kyri56xcaesar', 'abandoned', 1), -- id 6 4-3-2023
+    ('$dads', 'SnakeBot', 'https://picsum.photos/400/500', 'None', '2024-07-25', 'kyri56xcaesar', 'inprogress', 0), -- id 7 25-7-2024
+    ('$dads', 'ModiasBot', 'https://picsum.photos/500/400', 'None', '2024-08-02', 'kyri56xcaesar', 'active', 0) -- id 8 2-8-2024
 ;
 
 

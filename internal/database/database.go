@@ -225,7 +225,7 @@ func (dbh *DBHandler) RunSQLscript(sql string) (string, error) {
 
 	result, err := dbh.DB.Exec(sql)
 	if err != nil {
-		return "No resutt...", fmt.Errorf("error executing SQL script: %w", err)
+		return "No result...", fmt.Errorf("error executing SQL script: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()

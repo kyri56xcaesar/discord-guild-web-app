@@ -77,8 +77,22 @@ func HofHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Serve clients.html
-func ClientsHandler(w http.ResponseWriter, r *http.Request) {
-	RespondWithTemplate(w, http.StatusOK, filepath.Join("web", "templates", "clients.html"), "", nil, nil)
+func fetchNews(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
+
+	RespondWithTemplate(w, http.StatusOK, filepath.Join("web", "templates", "news.html"), "news.html", nil, nil)
+}
+
+func fetchFeaturedNews(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
+
+	RespondWithTemplate(w, http.StatusOK, filepath.Join("web", "templates", "featured.html"), "featured.html", nil, nil)
+}
+
+func fetchPoll(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
+
+	RespondWithTemplate(w, http.StatusOK, filepath.Join("web", "templates", "poll.html"), "poll.html", nil, nil)
 }
 
 // Require Autnentication!

@@ -103,7 +103,12 @@ func (s *Server) routes() {
 	// OPEN API
 	// Subrouter for /guild
 	guildRouter := s.Router.PathPrefix("/guild").Subrouter()
+	// NewsLetter
+	guildRouter.HandleFunc("/fetch-featured-news", fetchFeaturedNews).Methods("GET", "POST")
+	guildRouter.HandleFunc("/fetch-news", fetchNews).Methods("GET", "POST")
+	guildRouter.HandleFunc("/fetch-poll-results", fetchPoll).Methods("GET")
 
+	// Entities
 	// CRUD
 	guildRouter.HandleFunc("/", GuildHandler).Methods("GET", "POST")
 	guildRouter.HandleFunc("/members", MembersHandler).Methods("GET", "POST")

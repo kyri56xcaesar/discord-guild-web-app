@@ -10,7 +10,7 @@
             createdat: "{{ $bot.Createdat }}",
             author: "{{ $bot.Author }}",
             status: "{{ $bot.Status }}",
-            lines: {{ $bot.Lines }},
+            lines: [],
             id: {{ $bot.Id }},
             issinger: {{ $bot.Issinger }}
         },
@@ -65,6 +65,26 @@
 </div>
 
 <div id="bot-more-container">
+  <table id="line-details-table" border="1" style="width: 100%; border-collapse: collapse;">
+    <thead>
+      <tr>
+        <th>Phrase</th>
+        <th>Author</th>
+        <th>To ID</th>
+        <th>Type</th>
+        <th>Created At</th>
+      </tr>
+    </thead>
+    <tbody id="line-details-body">
+      <!-- Rows will be dynamically inserted here -->
+    </tbody>
+  </table>
+
+</div>
+
+<div id="add-new-line-div">
+  <form id="add-new-line-form">
+  </form>
 </div>
 
 
@@ -72,40 +92,75 @@
     // Select all list items
     listItems = document.querySelectorAll('.bot-list li');
     botContentDiv = document.getElementById('bot-content');
-    console.log(listItems);    
-    
-    // Add click listeners to each list item
-    listItems.forEach((listItem, index) => {
-      listItem.addEventListener('click', () => {
-      // Extract information from the botsData array
-        const bot = botsData[index];
-        // Update the bot-content div with detailed information about the selected bot
-        botContentDiv.innerHTML = `
-                    <div class="bot-content-details">
-                      <h2>${bot.username}</h2>
-                      <hr>
-                      <p>Guild: ${bot.guild}</p>
-                      <p>Author: ${bot.author}</p>
-                      <p>Status: ${bot.status}</p>
-                      <p>Created at: ${bot.createdat}</p>
-                      <input value="View more" type="button" onClick="document.getElementById('bot-more-container').scrollIntoView();"></input>
-                    </div>
-                    <div class="bot-content-image">
-                      <img src="${bot.avatarurl}" alt="${bot.username}'s avatar" >
-                    </div>
-                `;
-        // Highlight the selected list item
-        listItems.forEach(item => item.classList.remove('selected'));
-        listItem.classList.add('selected');
-        // Optionally rotate the wheel to align with the selected bot
-        nextBot(index);
-      });
+    wheel = document.getElementById("dads-wheel");
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') {
+        rotateWheel(-1);  // Rotate left when the left arrow key is pressed
+      } else if (event.key === 'ArrowRight') {
+        rotateWheel(1);   // Rotate right when the right arrow key is pressed
+      } else if (event.key === 'Enter') {
+        const viewMoreBtn = document.getElementById("view-more-btn");
+        if (viewMoreBtn) {
+          viewMoreBtn.click();
+        }
+      }
+
     });
+
+    document.addEventListener('htmx:afterRequest', (event) => {
+      // Check if the event is related to the "/guild/search/lines" endpoint
+      if (event.detail.xhr && event.detail.xhr.responseURL.includes("/guild/search/lines")) {
+        const jsonResponse = event.detail.xhr.responseText;
+        // Parse the JSON response
+        try {
+          const lineData = JSON.parse(jsonResponse);
+          //console.log(lineData);
+          const tbody = document.getElementById('line-details-body');
+          // Clear previous rows
+          tbody.innerHTML = '';
+          if (lineData === "No results found") {
+            return;
+          }
+          // Format and add each line to the table body
+          lineData.forEach(line => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${line.phrase}</td>
+              <td>${line.author}</td>
+              <td>${line.toid}</td>
+              <td>${line.ltype}</td>
+              <td>${line.createdat}</td>
+            `;
+            tbody.appendChild(row);
+          });
+
+        } catch (error) {
+          console.error("Error parsing JSON response:", error);
+        }
+      }
+    });
+
+
 
     currentRotation = 0;
     currentIndex = 0;
     totalDivisions = botsData.length; // Dynamically set based on the number of bots
-    wheel = document.getElementById("dads-wheel");
+ 
+    listItems.forEach((listItem, index) => {
+      listItem.addEventListener('click', () => {
+        
+        currentIndex = index;
+        selectBot(index);
+        nextBot(index);
+      });
+    });
+    
+    if (totalDivisions > 0) {
+      selectBot(currentIndex);
+    }
+
+    startMovingAnnouncement('This is under construction!', 'red');
 
     // Function to rotate the wheel
     function rotateWheel(direction) {
@@ -113,8 +168,8 @@
         currentRotation += angle * direction;
         // Apply the rotation to the wheel
         wheel.style.transform = `rotate(${currentRotation}deg)`;
-        currentIndex += direction
-        selectBot(Math.abs(currentIndex))
+
+        selectBot(currentIndex - direction);
     }
 
     // Optionally, you could also implement a function to directly select a specific bot by its index:
@@ -124,14 +179,20 @@
         wheel.style.transform = `rotate(${currentRotation}deg)`;
 
         console.log("Selected bot index:", index);
-
         document.querySelectorAll('.bot-text span').forEach((span, spanIndex) => {
-            span.classList.toggle('selected', spanIndex === index);
+          span.classList.toggle('selected', spanIndex === index);
         });
     }
 
     function selectBot(id) {
+      if (id < 0){
+          id = totalDivisions + (id % totalDivisions)
+      }
       id %= totalDivisions;
+
+      currentIndex = id;
+
+      console.log("id: ", id);
       const bot = botsData[id];
       listItems.forEach((listItem, index) => {
         
@@ -145,12 +206,14 @@
                       <p>Author: ${bot.author}</p>
                       <p>Status: ${bot.status}</p>
                       <p>Created at: ${bot.createdat}</p>
-                      <input value="View more" type="button" onClick=""></input>
+                      <input id="view-more-btn" value="View more" type="button" hx-trigger="click" hx-get="/guild/search/lines?bid=${bot.id}" hx-swap="none" ></input>
                     </div>
                     <div class="bot-content-image">
                       <img src="${bot.avatarurl}" alt="${bot.username}'s avatar" >
                     </div>
                 `;
+
+          htmx.process(botContentDiv);
 
           listItem.classList.add('selected');
 
@@ -159,58 +222,49 @@
         }
 
       });
+      
+      document.querySelectorAll('.bot-text span').forEach((span, spanIndex) => {
+        span.classList.toggle('selected', spanIndex === id);
+      });
+
     }
+    
 
-    document.querySelectorAll('.bot-text span').forEach((span, index) => {
-        span.addEventListener('click', () => {
-            nextBot(index); // Rotate to the clicked division
-        });
-    });
+    function startMovingAnnouncement(text, color) {
+      const container = document.getElementById('bot-selector');
 
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'ArrowLeft') {
-        rotateWheel(-1);  // Rotate left when the left arrow key is pressed
-      } else if (event.key === 'ArrowRight') {
-        rotateWheel(1);   // Rotate right when the right arrow key is pressed
+      // Create a span to hold the moving text
+      const textSpan = document.createElement('span');
+      textSpan.innerText = text;
+      textSpan.style.position = 'absolute';
+      textSpan.style.whiteSpace = 'nowrap';
+      textSpan.style.color = color;
+      textSpan.style.fontSize = '1.5em';
+      textSpan.style.transform = 'translateY(-50%)';
+
+      // Append the textSpan to the container
+      container.appendChild(textSpan);
+      posX = -textSpan.offsetWidth;
+
+      // Function to animate the text
+      function moveText() {
+        posX += 2; // Speed of movement; increase for faster scrolling
+        if (posX > container.offsetWidth) {
+          posX = -textSpan.offsetWidth; // Reset to the start when the end is reached
+        }
+        textSpan.style.left = `${posX}px`;
+        requestAnimationFrame(moveText);
       }
-    });
 
-    if (totalDivisions > 0) {
-      selectBot(currentIndex);
+      // Start moving the text
+      moveText();
     }
 
-  function startMovingAnnouncement(text, color) {
-    const container = document.getElementById('bot-selector');
-
-    // Create a span to hold the moving text
-    const textSpan = document.createElement('span');
-    textSpan.innerText = text;
-    textSpan.style.position = 'absolute';
-    textSpan.style.whiteSpace = 'nowrap';
-    textSpan.style.color = color;
-    textSpan.style.fontSize = '1.5em';
-    textSpan.style.transform = 'translateY(-50%)';
-
-    // Append the textSpan to the container
-    container.appendChild(textSpan);
-
-    // Initial position
-    posX = -textSpan.offsetWidth;
-
-    // Function to animate the text
-    function moveText() {
-      posX += 2; // Speed of movement; increase for faster scrolling
-      if (posX > container.offsetWidth) {
-        posX = -textSpan.offsetWidth; // Reset to the start when the end is reached
-      }
-      textSpan.style.left = `${posX}px`;
-      requestAnimationFrame(moveText);
-    }
-
-    // Start moving the text
-    moveText();
-  }
-
-  // Example usage:
-  startMovingAnnouncement('Breaking News: This is a scrolling text!', 'yellow');
 </script>
+
+
+
+
+
+
+
