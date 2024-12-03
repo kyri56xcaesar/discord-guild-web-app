@@ -68,17 +68,17 @@
 
 .hof-entry-1 {
   
-  border: 5px solid gold;
+  border-bottom: 5px solid gold;
   
 }
 
 .hof-entry-2 {
-  border: 5px solid silver;
+  border-bottom: 5px solid silver;
 
 }
 
 .hof-entry-3 {
-  border: 5px solid #CD7F32;
+  border-bottom: 5px solid #CD7F32;
 
 }
 

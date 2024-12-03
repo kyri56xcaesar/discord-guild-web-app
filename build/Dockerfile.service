@@ -9,10 +9,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/api/main.go
 # final stage
 FROM scratch
 WORKDIR /app
-COPY server.env .
+COPY ./configs ./configs
 COPY ./internal/database/sqlscripts ./internal/database/sqlscripts
 COPY ./web ./web
 COPY --from=builder /app/server .
-EXPOSE 6971
 CMD ["./server"]
 

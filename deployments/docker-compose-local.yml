@@ -20,7 +20,8 @@ services:
     image: nginx:alpine
     container_name: nginx
     ports:
-      - "6970:6970"
+      - "80:80"  # HTTP
+      - "443:443"  # HTTPS
     volumes:
       - ./ssl:/etc/nginx/ssl           # Mount SSL certificates
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro  # Mount Nginx config
