@@ -11,6 +11,7 @@ type Member struct {
 	Guild            string    `json:"guild"`
 	Username         string    `json:"username"`
 	Nickname         string    `json:"nickname"`
+	Leaguename       string    `json:"leaguename"`
 	Avatarurl        string    `json:"avatarurl"`
 	Displayavatarurl string    `json:"displayavatarurl"`
 	Bannerurl        string    `json:"bannerurl"`
@@ -65,7 +66,7 @@ func FilterFields(data []any, cols []string) []map[string]interface{} {
 }
 
 func (mb *Member) PtrFieldsDB() []any {
-	return []any{&mb.Id, &mb.Guild, &mb.Username, &mb.Nickname, &mb.Avatarurl, &mb.Displayavatarurl, &mb.Bannerurl, &mb.Displaybannerurl, &mb.Usercolor, &mb.Joinedat, &mb.Status, &mb.Msgcount}
+	return []any{&mb.Id, &mb.Guild, &mb.Username, &mb.Nickname, &mb.Leaguename, &mb.Avatarurl, &mb.Displayavatarurl, &mb.Bannerurl, &mb.Displaybannerurl, &mb.Usercolor, &mb.Joinedat, &mb.Status, &mb.Msgcount}
 }
 
 func (mb *Member) PtrFieldsSpecific(fields []string) []any {
@@ -141,6 +142,10 @@ func (m *Member) VerifyMember() error {
 	}
 	if !utils.IsValidUTF8String(m.Nickname) {
 		return &utils.FieldError{Field: "Nick", Message: "must contain only letters and numbers"}
+	}
+
+	if !utils.IsValidUTF8String(m.Leaguename) {
+		return &utils.FieldError{Field: "Leaguename", Message: "must contain only letters and numbers"}
 	}
 
 	allowedStatuses := map[string]bool{"online": true, "offline": true, "idle": true, "dnd": true}

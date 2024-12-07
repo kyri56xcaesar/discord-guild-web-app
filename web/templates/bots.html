@@ -65,7 +65,7 @@
 </div>
 
 <div id="bot-more-container">
-  <table id="line-details-table" border="1" style="width: 100%; border-collapse: collapse;">
+  <table id="line-details-table" class="resizable-table" border="1" style="width: 100%; border-collapse: collapse;">
     <thead>
       <tr>
         <th>Phrase</th>
@@ -178,7 +178,6 @@
         currentRotation = -angle; // Move the desired division into the focus area
         wheel.style.transform = `rotate(${currentRotation}deg)`;
 
-        console.log("Selected bot index:", index);
         document.querySelectorAll('.bot-text span').forEach((span, spanIndex) => {
           span.classList.toggle('selected', spanIndex === index);
         });
@@ -192,7 +191,6 @@
 
       currentIndex = id;
 
-      console.log("id: ", id);
       const bot = botsData[id];
       listItems.forEach((listItem, index) => {
         
@@ -260,6 +258,37 @@
       moveText();
     }
 
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const table = document.querySelector('.resizable-table');
+
+      const headers = table.querySelectorAll('th')
+      headers.forEach((header, index) => {
+        const resizer = document.createElement('div');
+        resizer.classList.add('resizer')
+        header.appendChild(resizer);
+
+        resizer.addEventListener('mousedown', (event) => {
+          event.preventDefault();
+
+          const startX = event.pageX;
+          const startWidth = header.offsetWidth;
+
+          const onMouseMove = (e) => {
+            const newWidth = startWidth + (e.pageX - startX);
+            header.style.wdith = `${newWidth}px`;
+          };
+
+          const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+          };
+
+          document.addEventListener('mousemove', onMouseMove);
+          document.addEventListener('mouseup', onMouseUp);
+        });
+      });
+    });
 </script>
 
 

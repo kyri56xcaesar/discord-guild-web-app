@@ -23,6 +23,7 @@
 
 #bot-more-container {
   width: 95%;
+  max-width: 1560px;
 
   padding: 5px;
   margin: 20px;
@@ -37,7 +38,23 @@
   height: 30px;
 }
 
+.resizable-table th {
+  position: relative;
+  user-select: none;
+}
+.resizable-table th .resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 5px;
+  height: 100%;
+  cursor: col-resize;
+  background-color: transparent;
+}
 
+.resizable-table th .resizer: hover {
+  background-color: #ccc;
+}
 
 #dads-wheel {
 
@@ -295,8 +312,7 @@ ol .selected {
   /* Fixed Width for Each Column */
   #line-details-table th:nth-child(1), 
   #line-details-table td:nth-child(1) {
-    width: 300px; /* Phrase column */
-    max-width: 300px;
+    max-width: 400px;
   }
 
   #line-details-table th:nth-child(2),
@@ -304,10 +320,14 @@ ol .selected {
   #line-details-table th:nth-child(3),
   #line-details-table td:nth-child(3),
   #line-details-table th:nth-child(4),
-  #line-details-table td:nth-child(4),
+  #line-details-table td:nth-child(4)
+  {
+    width: 100px; /* Other columns */
+  }
+
   #line-details-table th:nth-child(5),
   #line-details-table td:nth-child(5) {
-    width: 150px; /* Other columns */
+    width: 200px;
   }
 
   /* Cell Styling */

@@ -80,19 +80,35 @@ func HofHandler(w http.ResponseWriter, r *http.Request) {
 func fetchNews(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
-	RespondWithTemplate(w, http.StatusOK, filepath.Join("web", "templates", "news.html"), "news.html", nil, nil)
+	// RespondWithTemplate(w, http.StatusOK, filepath.Join("web", "templates", "news.html"), "news.html", nil, nil)
+}
+
+func fetchCategory(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v from %v", r.Method, r.URL.Path, r.UserAgent())
+
+	data := make(map[string]string)
+	data["test"] = "adeio"
+	RespondWithJSON(w, http.StatusOK, data)
 }
 
 func fetchFeaturedNews(w http.ResponseWriter, r *http.Request) {
-	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
+	log.Printf("%v request on path: %v from %v", r.Method, r.URL.Path, r.UserAgent())
 
-	RespondWithTemplate(w, http.StatusOK, filepath.Join("web", "templates", "featured.html"), "featured.html", nil, nil)
+	// RespondWithTemplate(w, http.StatusOK, filepath.Join("web", "templates", "featured.html"), "featured.html", nil, nil)
 }
 
 func fetchPoll(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v request on path: %v", r.Method, r.URL.Path)
 
-	RespondWithTemplate(w, http.StatusOK, filepath.Join("web", "templates", "poll.html"), "poll.html", nil, nil)
+	// RespondWithTemplate(w, http.StatusOK, filepath.Join("web", "templates", "poll.html"), "poll.html", nil, nil)
+}
+
+func submitNews(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v from %v", r.Method, r.URL.Path, r.UserAgent())
+}
+
+func votePoll(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%v request on path: %v from %v", r.Method, r.URL.Path, r.UserAgent())
 }
 
 // Require Autnentication!

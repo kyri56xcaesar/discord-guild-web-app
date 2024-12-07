@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS members
 	guild TEXT,
 	username TEXT,
 	nickname TEXT,
+  leaguename TEXT,
 	avatarurl TEXT,
 	displayavatarurl TEXT,
 	bannerurl TEXT,

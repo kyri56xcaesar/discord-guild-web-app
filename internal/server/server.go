@@ -105,8 +105,11 @@ func (s *Server) routes() {
 	guildRouter := s.Router.PathPrefix("/guild").Subrouter()
 	// NewsLetter
 	guildRouter.HandleFunc("/fetch-featured-news", fetchFeaturedNews).Methods("GET", "POST")
+	guildRouter.HandleFunc("/fetch-category", fetchCategory).Methods("GET")
 	guildRouter.HandleFunc("/fetch-news", fetchNews).Methods("GET", "POST")
 	guildRouter.HandleFunc("/fetch-poll-results", fetchPoll).Methods("GET")
+	guildRouter.HandleFunc("/submit-news", submitNews).Methods("POST")
+	guildRouter.HandleFunc("/vote", votePoll).Methods("POST")
 
 	// Entities
 	// CRUD

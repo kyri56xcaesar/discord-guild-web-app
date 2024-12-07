@@ -28,8 +28,8 @@ func (dbh *DBHandler) InsertMember(u models.Member) (*models.Member, error) {
 	}
 	defer dbh.DB.Close()
 
-	res, err := dbh.DB.Exec(`INSERT INTO members (guild, username, nickname, avatarurl, displayavatarurl, bannerurl, displaybannerurl, usercolor, joinedat, status, msgcount) 
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	res, err := dbh.DB.Exec(`INSERT INTO members (guild, username, nickname, leaguename, avatarurl, displayavatarurl, bannerurl, displaybannerurl, usercolor, joinedat, status, msgcount) 
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		u.Guild, u.Username, u.Nickname, u.Avatarurl, u.Displaybannerurl, u.Bannerurl,
 		u.Displaybannerurl, u.Usercolor, u.Joinedat, u.Status, u.Msgcount)
 	if err != nil {
@@ -91,8 +91,8 @@ func (dbh *DBHandler) InsertMultipleMembers(members []models.Member) ([]models.M
 	}
 
 	// Prepare the SQL statement for inserting members
-	stmt, err := tx.Prepare(`INSERT INTO members (guild, username, nickname, avatarurl, displayavatarurl, bannerurl, displaybannerurl, usercolor, joinedat, status, msgcount) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+	stmt, err := tx.Prepare(`INSERT INTO members (guild, username, nickname, leaguename, avatarurl, displayavatarurl, bannerurl, displaybannerurl, usercolor, joinedat, status, msgcount) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		log.Printf("Failed to prepare statement: %v", err)
 		return nil, err
@@ -484,16 +484,16 @@ func (dbh *DBHandler) UpdateMemberByIdentifier(u models.Member, identifier strin
 	var res sql.Result
 
 	if utils.IsNumeric(identifier) {
-		res, err = dbh.DB.Exec(`UPDATE members SET guild = ?, id = ?, username = ?, nickname = ?, avatarurl = ?, 
+		res, err = dbh.DB.Exec(`UPDATE members SET guild = ?, id = ?, username = ?, nickname = ?, leaguename = ?, avatarurl = ?, 
 		displayavatarurl = ?, bannerurl = ?, displaybannerurl = ?, usercolor = ?, 
 		joinedat = ?, status = ?, msgcount = ? WHERE id = ?`,
-			u.Guild, u.Id, u.Username, u.Nickname, u.Avatarurl, u.Displaybannerurl, u.Bannerurl,
+			u.Guild, u.Id, u.Username, u.Nickname, u.Leaguename, u.Avatarurl, u.Displaybannerurl, u.Bannerurl,
 			u.Displaybannerurl, u.Usercolor, u.Joinedat, u.Status, u.Msgcount, identifier)
 	} else {
-		res, err = dbh.DB.Exec(`UPDATE members SET guild = ?, id = ?, username = ?, nickname = ?, avatarurl = ?, 
+		res, err = dbh.DB.Exec(`UPDATE members SET guild = ?, id = ?, username = ?, nickname = ?, leaguename = ?, avatarurl = ?, 
 		displayavatarurl = ?, bannerurl = ?, displaybannerurl = ?, usercolor, 
 		joinedat = ?, status = ?, msgcount = ? WHERE username = ?`,
-			u.Guild, u.Id, u.Username, u.Nickname, u.Avatarurl, u.Displaybannerurl, u.Bannerurl,
+			u.Guild, u.Id, u.Username, u.Nickname, u.Leaguename, u.Avatarurl, u.Displaybannerurl, u.Bannerurl,
 			u.Displaybannerurl, u.Usercolor, u.Joinedat, u.Status, u.Msgcount, identifier)
 	}
 

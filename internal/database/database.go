@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS members
 	guild TEXT,
 	username TEXT,
 	nickname TEXT,
+  leaguename TEXT,
 	avatarurl TEXT,
 	displayavatarurl TEXT,
 	bannerurl TEXT,
@@ -118,15 +119,16 @@ var (
 
 	AllowedMemberCols = map[string]bool{
 		// Members
-		"id":        true,
-		"guild":     true,
-		"username":  true,
-		"nickname":  true,
-		"avatarurl": true,
-		"usercolor": true,
-		"msgcount":  true,
-		"joinedat":  true,
-		"status":    true,
+		"id":         true,
+		"guild":      true,
+		"username":   true,
+		"nickname":   true,
+		"leaguename": true,
+		"avatarurl":  true,
+		"usercolor":  true,
+		"msgcount":   true,
+		"joinedat":   true,
+		"status":     true,
 	}
 
 	AllowedBotCols = map[string]bool{
