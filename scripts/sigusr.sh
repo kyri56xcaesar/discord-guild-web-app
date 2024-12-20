@@ -2,7 +2,7 @@
 
 PROCESS_NAME=discordwebapp
 RESTART=false
-SCRIPT_PATH=""
+SEND_SCRIPT=false
 CONFIG_PATH=""
 
 function show_help() {
@@ -11,17 +11,17 @@ function show_help() {
   echo "Options:"
   echo "  -p            Specify process name to send the signals"
   echo "  -r            Restart the server (send SIGUSR1)"
-  echo "  -s <script>   Path to the SQL script to run (send SIGUSR2)"
+  echo "  -s            Send signal to prompt SQL script to run (send SIGUSR2)"
   echo "  -c <config>   Path to the new config file for restart"
   echo "  -h            Show this help message"
   exit 0
 }
 
-while getopts ":p:rhs:c:" opt; do
+while getopts ":p:rsc:h:" opt; do
   case $opt in
   p) PROCESS_NAME="$OPTARG" ;;
   r) RESTART=true ;;
-  s) SCRIPT_PATH="$OPTARG" ;;
+  s) SEND_SCRIPT=true ;;
   c) CONFIG_PATH="$OPTARG" ;;
   h) show_help ;;
   \?)
@@ -51,7 +51,7 @@ function send_signal() {
 }
 
 echo "Restart: "$RESTART
-echo "Script path: "$SCRIPT_PATH
+echo "Send script: "$SCRIPT_PATH
 echo "Config path: "$CONFIG_PATH
 
 if $RESTART; then
@@ -62,26 +62,10 @@ if $RESTART; then
   exit 0
 fi
 
-if [ -n "$SCRIPT_PATH" ]; then
-
-  if [ ! -f "$SCRIPT_PATH" ]; then
-    echo "SQL script not found at path: $SCRIPT_PATH"
-    cat "Empty" | tee /proc/$PID/fd/0
-    exit 0
-
-  fi
-
-  if [ -n "$SCRIPT_PATH" ]; then
-    echo "Enironment Variable"
-    export SQL_SCRIPT_PATH=$SCRIPT_PATH
-  fi
-
+if $SEND_SCRIPT; then
   send_signal SIGUSR2 "$PID"
-
-  #cat "$SCRIPT_PATH" | tee /proc/$PID/fd/0
-  #echo "SQL script sent to the process"
+  echo "Sent SIGUSR2 to process $PID"
   exit 0
-
 fi
 
 show_help
